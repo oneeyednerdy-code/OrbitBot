@@ -1,0 +1,1 @@
+{"name":"nerdspace-orbitbot","version":"0.1.0-alpha.3","private":true,"type":"module","scripts":{"dev":"wrangler dev","deploy":"wrangler deploy","db:local":"wrangler d1 migrations apply DB --local","db:remote":"wrangler d1 migrations apply DB --remote"},"devDependencies":{"wrangler":"^4.33.1","typescript":"^5.9.2","@cloudflare/workers-types":"^4.20260825.0"}}
