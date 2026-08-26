@@ -2,8 +2,32 @@
   "name": "orbitbot",
   "main": "src/index.ts",
   "compatibility_date": "2026-08-25",
-  "assets": { "directory": "./public", "binding": "ASSETS", "run_worker_first": ["/api/*","/oauth/*","/interactions","/verify/*","/logout"] },
-  "d1_databases": [{ "binding": "DB", "database_name": "nerdspace-orbitbot", "database_id": "REPLACE_WITH_D1_DATABASE_ID", "migrations_dir": "migrations" }],
-  "secrets": { "required": ["DISCORD_CLIENT_ID","DISCORD_CLIENT_SECRET","DISCORD_BOT_TOKEN","DISCORD_PUBLIC_KEY","SESSION_SECRET","TURNSTILE_SECRET_KEY"] },
-  "vars": { "APP_ORIGIN": "https://REPLACE_WITH_ORBITBOT_DOMAIN", "TURNSTILE_SITE_KEY": "REPLACE_WITH_PRODUCTION_SITE_KEY", "TURNSTILE_HOSTNAMES": "REPLACE_WITH_ORBITBOT_HOSTNAME" }
+  "preview_urls": false,
+
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    "run_worker_first": [
+      "/api/*",
+      "/oauth/*",
+      "/interactions",
+      "/verify/*",
+      "/logout"
+    ]
+  },
+
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "nerdspace-orbitbot",
+      "database_id": "d8026aeb-f816-4e63-98ce-a4d591d728c8",
+      "migrations_dir": "migrations"
+    }
+  ],
+
+  "vars": {
+    "APP_ORIGIN": "https://orbitbot.oneeyednerdy.workers.dev",
+    "TURNSTILE_SITE_KEY": "0x4AAAAAAEdM8FKnSCsoDd_s",
+    "TURNSTILE_HOSTNAMES": "orbitbot.oneeyednerdy.workers.dev"
+  }
 }
