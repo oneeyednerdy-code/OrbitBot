@@ -21,16 +21,18 @@
       "migrations_dir": "migrations"
     }
   ],
-  "secrets": {
-    "required": [
-      "1542293214730649712",
-      "nb9VadOJKwpvcp4FQTfGkNTKc_SKLJy0",
-      "MTU0MjI5MzIxNDczMDY0OTcxMg.GtU1qo.I2gt0hnLlQkqtw_rR8tGTw_s0Y6e8zH6MUNrPM",
-      "f40813406ddd442e9fad18cf26c9b931589a6834d564c49736ede1e55a4a1d7f",
-      "176b735705717dd67c93ce846213258fc84ccfa84e20c96a909541ded18c5335",
-      "0x4AAAAAAEdM8FSI8vslJXPbiKDNvC1sqdQ"
-    ]
-  },
+"secrets": {
+  "required": [
+    "DISCORD_APPLICATION_ID",
+    "DISCORD_CLIENT_ID",
+    "DISCORD_CLIENT_SECRET",
+    "DISCORD_BOT_TOKEN",
+    "DISCORD_PUBLIC_KEY",
+    "SESSION_SECRET",
+    "ENCRYPTION_KEY",
+    "TURNSTILE_SECRET_KEY"
+  ]
+},
   "vars": {
     "APP_ORIGIN": "https://orbitbot.oneeyednerdy.workers.dev",
     "TURNSTILE_SITE_KEY": "0x4AAAAAAEdM8FKnSCsoDd_s",
