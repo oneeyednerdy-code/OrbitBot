@@ -18,7 +18,7 @@
     {
       "binding": "DB",
       "database_name": "nerdspace-orbitbot",
-      "database_id": "d8026aeb-f816-4e63-98ce-a4d591d728c8",
+      "database_id": "PASTE-YOUR-D1-DATABASE-ID-HERE",
       "migrations_dir": "migrations"
     }
   ],

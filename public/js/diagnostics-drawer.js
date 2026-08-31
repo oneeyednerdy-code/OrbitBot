@@ -25,7 +25,7 @@ function render(data){
   if(dot)dot.className=`diag-dot ${data.status}`;
   if(list)list.innerHTML=data.checks.map(x=>`<div class="diag-check"><span class="diag-result ${x.ok?'ok':'warn'}">${x.ok?'✓':'!'}</span><div><strong>${escapeHtml(x.label)}</strong><div class="small">${escapeHtml(x.detail)}</div></div></div>`).join('');
 }
-function safeReport(){return {version:'0.1.0-alpha.31',generated_at:new Date().toISOString(),guild:'redacted',page:state.page,diagnostics:last,client:{user_agent:navigator.userAgent,online:navigator.onLine,errors:clientDiagnostics.errors.slice(-10),network_failures:clientDiagnostics.networkFailures.slice(-10)},privacy:'Tokens, secrets, cookies, authorization headers and message contents are excluded.'}}
+function safeReport(){return {version:'0.1.0-alpha.32',generated_at:new Date().toISOString(),guild:'redacted',page:state.page,diagnostics:last,client:{user_agent:navigator.userAgent,online:navigator.onLine,errors:clientDiagnostics.errors.slice(-10),network_failures:clientDiagnostics.networkFailures.slice(-10)},privacy:'Tokens, secrets, cookies, authorization headers and message contents are excluded.'}}
 async function copyReport(){const text=JSON.stringify(safeReport(),null,2);await navigator.clipboard.writeText(text);flash('Diagnostic report copied.');}
 function downloadReport(){const blob=new Blob([JSON.stringify(safeReport(),null,2)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-diagnostics-${Date.now()}.txt`;a.click();URL.revokeObjectURL(a.href);}
 function openBugDialog(){const d=document.querySelector('#bugDialog');document.querySelector('#bugArea').value=state.page;document.querySelector('#bugResult').innerHTML='';d.showModal();}

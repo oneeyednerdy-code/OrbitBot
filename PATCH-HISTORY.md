@@ -25,3 +25,4 @@
 - **alpha.30** — Community Operations Center + unified cumulative release
 
 - **alpha.31** — Adaptive Onboarding + Connection Center + persistent Diagnostics Drawer + privacy-safe Developer Bug Reporting
+- **alpha.32** — UI layout patch: 7/5 desktop grid spans, Shield Mode form/select styling, independently scrollable left navigation

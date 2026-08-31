@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.31 — Deploy Me First
+# Orbit v0.1.0-alpha.32 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain from the original Orbit schema through alpha.31.
+This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain from the original Orbit schema through alpha.32. Alpha.32 adds no migrations; the latest migration remains `0028_diagnostics_bug_reports.sql`.
 
 ## 1. Prerequisites
 
