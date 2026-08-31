@@ -12,16 +12,13 @@ const choices=[
   ['social','Socials','Connect social publishing and social-to-Discord workflows.'],
   ['creator_community','Creator Community','Creator directory, events, applications and community tools.'],
 ];
-const types=[['creator','Streamer / Creator'],['general','General Community'],['ttrpg','TTRPG / Gaming Group'],['support','Support Community'],['events','Events Community'],['custom','Custom Setup']];
 
 export function renderOnboarding(manage=false){
   const existing=new Set((state.bundle?.features||[]).filter(x=>Number(x.enabled)===1).map(x=>x.feature_key));
-  const type=state.bundle?.onboarding?.community_type||'creator';
   document.querySelector('#content').innerHTML=`
     <div class="eyebrow">${manage?'Manage Features':'Welcome to Orbit'}</div>
     <h1 class="page-title">${manage?'Choose what Orbit shows you.':'What do you want Orbit to help with?'}</h1>
-    <p class="page-intro">Orbit can do a lot without putting all of it in your face. Pick only what you need. You can add or hide features later without deleting their configuration.</p>
-    <div class="card"><h2>What kind of Discord is this?</h2><div class="choice-row">${types.map(([k,l])=>`<label class="choice-pill"><input type="radio" name="communityType" value="${k}" ${k===type?'checked':''}> <span>${escapeHtml(l)}</span></label>`).join('')}</div></div>
+    <p class="page-intro">Pick only what you need. You can add or hide features later without deleting their configuration.</p>
     <div class="feature-choice-grid">${choices.map(([key,title,copy])=>`<label class="feature-choice"><input type="checkbox" value="${key}" ${existing.has(key)?'checked':''}><span class="feature-check">✓</span><strong>${escapeHtml(title)}</strong><small>${escapeHtml(copy)}</small></label>`).join('')}</div>
     <div class="card onboarding-actions"><div><strong>You can change this anytime.</strong><div class="small">Turning a feature off hides it. Orbit keeps its existing settings and data.</div></div><div class="button-row"><button id="chooseAll" class="btn secondary" type="button">I Want Everything</button><button id="saveNeeds" class="btn" type="button">${manage?'Save Features':'Continue'}</button></div></div>
     <div id="onboardingNotice"></div>`;
@@ -31,11 +28,10 @@ export function renderOnboarding(manage=false){
 
 async function saveNeeds(){
   const features=[...document.querySelectorAll('.feature-choice input:checked')].map(x=>x.value);
-  const community_type=document.querySelector('input[name="communityType"]:checked')?.value||'custom';
   const notice=document.querySelector('#onboardingNotice');
   try{
-    await api(`/api/guilds/${state.guildId}/onboarding`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({community_type,features})});
-    state.bundle.onboarding={community_type,completed_at:Date.now()};
+    const saved=await api(`/api/guilds/${state.guildId}/onboarding`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({features})});
+    state.bundle.onboarding={...(state.bundle.onboarding||{}),community_type:saved.community_type||state.bundle.onboarding?.community_type||'custom',completed_at:Date.now()};
     state.bundle.features=choices.map(([feature_key])=>({feature_key,enabled:features.includes(feature_key)?1:0}));
     window.dispatchEvent(new CustomEvent('orbit-features-changed'));
     state.page='overview';history.replaceState(null,'','#overview');

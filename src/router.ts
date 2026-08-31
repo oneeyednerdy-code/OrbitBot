@@ -14,9 +14,9 @@ export async function routeRequest(request: Request, env: Env): Promise<Response
   if (url.pathname === '/oauth/login') return oauthStart(env);
   if (url.pathname === '/oauth/callback') return oauthCallback(request, env);
   if (url.pathname === '/oauth/install') return installRedirect(env, url.searchParams.get('guild_id'));
-  const connectionStart = url.pathname.match(/^\/connections\/(twitch|youtube)\/start$/);
+  const connectionStart = url.pathname.match(/^\/connections\/(twitch|youtube|threads|mastodon)\/start$/);
   if (connectionStart) return connectionOauthStart(request, env, connectionStart[1]);
-  const connectionCallback = url.pathname.match(/^\/connections\/(twitch|youtube)\/callback$/);
+  const connectionCallback = url.pathname.match(/^\/connections\/(twitch|youtube|threads|mastodon)\/callback$/);
   if (connectionCallback) return connectionOauthCallback(request, env, connectionCallback[1]);
   if (url.pathname === '/logout') {
     await deleteSession(request, env);

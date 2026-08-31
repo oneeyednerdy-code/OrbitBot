@@ -67,7 +67,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'creator-safety') return creatorSafetyApi(request, env, guildId, session.user_id);
   if (action === 'operations') return operationsApi(request, env, guildId);
   if (action === 'onboarding') return onboardingApi(request, env, guildId, session.user_id);
-  if (action === 'connections') return connectionsApi(request, env, guildId);
+  if (action === 'connections') return connectionsApi(request, env, guildId, session.user_id);
   if (action === 'bug-reports') return bugReportsApi(request, env, guildId, session.user_id);
   if (action === 'start-gateway' && request.method === 'POST') { const id=env.GATEWAY.idFromName('discord'); await env.GATEWAY.get(id).fetch('https://gateway/start',{method:'POST'}); return json({ok:true}); }
   return json({ error: 'bad_request' }, 400);

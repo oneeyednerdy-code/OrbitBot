@@ -75,3 +75,13 @@ Those remain future work rather than fake "working" buttons.
 - Connection Center exposes operator-configured Twitch and YouTube OAuth as simple Connect buttons.
 - Persistent Diagnostics Drawer with health checks, copy/download report, and privacy-safe bug reporting.
 - Developer Bug Inbox is restricted to Discord user IDs configured by the Orbit operator.
+
+## Alpha.34 additions
+- Threads OAuth connection for publishing.
+- Mastodon per-instance OAuth connection.
+- Bluesky app-password authorization with encrypted storage.
+- Verbose sanitized browser request logs and server error logs.
+- Discord Scheduled Event permission/error diagnostics.
+- Role panel deletion removes the Discord panel message but preserves already assigned member roles.
+- Applications/Appeals form editor with up to 10 add/remove questions and edit-in-place support.
+- Simplified onboarding with no Discord community-type question.

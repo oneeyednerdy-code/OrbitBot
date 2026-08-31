@@ -5,6 +5,8 @@ import { json } from '../../http/responses';
 const MANAGE_ROLES = 1n << 28n;
 const SEND_MESSAGES = 1n << 11n;
 const VIEW_CHANNEL = 1n << 10n;
+const ADMINISTRATOR = 1n << 3n;
+const CREATE_EVENTS = 1n << 44n;
 
 export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy: string) {
   const checks: any[] = [];
@@ -31,7 +33,8 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
     for (const role of roles) if (bot.roles?.includes(role.id)) perms |= BigInt(role.permissions ?? '0');
     checks.push(check('view_channel', Boolean(perms & VIEW_CHANNEL), 'View Channels', Boolean(perms & VIEW_CHANNEL) ? 'Orbit can view server channels.' : 'Orbit is missing View Channels.'));
     checks.push(check('send_messages', Boolean(perms & SEND_MESSAGES), 'Send Messages', Boolean(perms & SEND_MESSAGES) ? 'Orbit can send messages.' : 'Orbit is missing Send Messages.'));
-    checks.push(check('manage_roles', Boolean(perms & MANAGE_ROLES), 'Manage Roles', Boolean(perms & MANAGE_ROLES) ? 'Orbit can manage assignable roles.' : 'Orbit is missing Manage Roles.'));
+    checks.push(check('manage_roles', Boolean((perms & ADMINISTRATOR) || (perms & MANAGE_ROLES)), 'Manage Roles', Boolean((perms & ADMINISTRATOR) || (perms & MANAGE_ROLES)) ? 'Orbit can manage assignable roles.' : 'Orbit is missing Manage Roles.'));
+    if (enabled.has('creator_community')) checks.push(check('create_events', Boolean((perms & ADMINISTRATOR) || (perms & CREATE_EVENTS)), 'Create Events', Boolean((perms & ADMINISTRATOR) || (perms & CREATE_EVENTS)) ? 'Orbit can create Discord Scheduled Events.' : 'Orbit is missing the Create Events permission required for Discord Scheduled Events.'));
     const top = Math.max(...roles.filter(r => bot.roles?.includes(r.id)).map(r => r.position), 0);
     for (const [label,id] of [['Rules',config?.rules_role_id],['Verified',config?.verified_role_id],['Combined',config?.combined_role_id]] as const) {
       if (!id) continue;
@@ -40,7 +43,8 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
     }
   }
   const score = Math.round((checks.filter(c=>c.ok).length / Math.max(checks.length,1)) * 100);
-  const result = { score, status: score === 100 ? 'healthy' : score >= 75 ? 'attention' : 'critical', checks, generated_at: Date.now() };
+  const recentErrors = (await env.DB.prepare('SELECT request_id,route,method,status,error_code,detail_json,created_at FROM orbit_error_log WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>()).results.map((row:any)=>({request_id:row.request_id,route:row.route,method:row.method,status:row.status,error_code:row.error_code,detail:safeJson(row.detail_json),created_at:row.created_at}));
+  const result = { score, status: score === 100 ? 'healthy' : score >= 75 ? 'attention' : 'critical', checks, recent_errors: recentErrors, generated_at: Date.now() };
   return result;
 }
 
@@ -50,3 +54,4 @@ export async function diagnosticsApi(env: Env, guildId: string, requestedBy: str
   return json(result);
 }
 function check(code:string, ok:boolean, label:string, detail:string){return {code,ok,label,detail,severity:ok?'ok':'warning'};}
+function safeJson(value:string){try{return JSON.parse(value||'{}')}catch{return {raw:String(value||'').slice(0,1200)}}}

@@ -6,6 +6,7 @@ import { moduleCatalog } from '../modules/diagnostics/catalog';
 import { handleGuildApi, listManageableGuilds } from '../modules/dashboard/api';
 import { json } from './responses';
 import { operatorBugApi } from '../modules/bug-reports/api';
+import { recordSystemError } from '../repositories/errors';
 
 function validMutation(request: Request, env: Env, csrf: string): boolean {
   return request.headers.get('origin') === env.APP_ORIGIN && request.headers.get('x-orby-csrf') === csrf;
@@ -29,5 +30,10 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   const action = match[2] ?? 'config';
   const authorization = await managedGuild(request, env, guildId);
   if (!authorization) return json({ error: 'forbidden' }, 403);
-  return handleGuildApi(request, env, guildId, action, authorization.guild, authorization.session);
+  try {
+    return await handleGuildApi(request, env, guildId, action, authorization.guild, authorization.session);
+  } catch (error: any) {
+    const requestId = await recordSystemError(env, guildId, url.pathname, request.method, 500, 'unhandled_api_error', { name: error?.name, message: error?.message, stack: String(error?.stack || '').split('\n').slice(0, 8) });
+    return json({ error: 'internal_error', detail: 'Orbit hit an unexpected server error.', request_id: requestId }, 500);
+  }
 }

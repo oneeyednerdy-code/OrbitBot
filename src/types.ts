@@ -15,6 +15,8 @@ export interface Env {
   YOUTUBE_API_KEY?: string;
   YOUTUBE_CLIENT_ID?: string;
   YOUTUBE_CLIENT_SECRET?: string;
+  THREADS_CLIENT_ID?: string;
+  THREADS_CLIENT_SECRET?: string;
   SOCIAL_CREDENTIAL_KEY?: string;
   ORBIT_OPERATOR_USER_IDS?: string;
   CACHE?: KVNamespace;

@@ -15,7 +15,11 @@ export async function onboardingApi(request: Request, env: Env, guildId: string,
   }
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
   const body = await request.json<any>();
-  const communityType = ['creator','general','ttrpg','support','events','custom'].includes(body.community_type) ? body.community_type : 'custom';
+  const existing = await env.DB.prepare('SELECT community_type FROM guild_onboarding WHERE guild_id=?').bind(guildId).first<any>();
+  const requestedType = String(body.community_type || '');
+  const communityType = ['creator','general','ttrpg','support','events','custom'].includes(requestedType)
+    ? requestedType
+    : String(existing?.community_type || 'custom');
   const selected = Array.isArray(body.features) ? body.features.filter((x: any) => FEATURE_KEYS.includes(x)).slice(0, FEATURE_KEYS.length) : [];
   const now = Date.now();
   const batch: D1PreparedStatement[] = [

@@ -1,6 +1,6 @@
 {
   "name": "nerdspace-orbitbot",
-  "version": "0.1.0-alpha.32",
+  "version": "0.1.0-alpha.34",
   "private": true,
   "type": "module",
   "scripts": {
