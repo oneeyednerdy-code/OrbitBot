@@ -1,0 +1,27 @@
+# Orbit Patch History
+
+- **Patch 0 / alpha.8** — UI System + Foundation
+- **alpha.9** — Diagnostics + Logs
+- **alpha.10** — Moderation + Honeypot + Gateway
+- **alpha.11** — Role Panels
+- **alpha.12** — Tickets
+- **alpha.13** — Scheduled Posts / Queue
+- **alpha.14** — Leveling
+- **alpha.15** — Automation Engine
+- **alpha.16** — Community Utilities
+- **alpha.17** — Ko-fi Milestones
+- **alpha.18** — Creator Notifications
+- **alpha.19** — Social Publishing Foundation
+- **alpha.20** — Bluesky / Mastodon / Threads
+- **alpha.21** — Security Center + Incident Lockdown
+- **alpha.22** — Shield Mode + automatic raid/spam signals
+- **alpha.23** — Community Alerts with custom live/offline messaging
+- **alpha.24** — Creator Directory
+- **alpha.25** — Community Events foundation
+- **alpha.26** — Discord Scheduled Event creation
+- **alpha.27** — Applications & Appeals workflow
+- **alpha.28** — Community Health
+- **alpha.29** — Creator Safety Mode
+- **alpha.30** — Community Operations Center + unified cumulative release
+
+- **alpha.31** — Adaptive Onboarding + Connection Center + persistent Diagnostics Drawer + privacy-safe Developer Bug Reporting

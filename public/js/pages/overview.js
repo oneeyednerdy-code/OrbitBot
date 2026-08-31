@@ -1,0 +1,6 @@
+import { $, api, escapeHtml, state, title, usableRoles } from '../core.js';
+
+export function renderOverview(){
+  const guild=state.bundle.guild;const modules=state.bundle.modules;
+  $('#content').innerHTML=`<div class="eyebrow">MISSION CONTROL</div><h1 class="page-title">${escapeHtml(guild.name)}</h1><p class="page-intro">A focused view of what Orbit is doing now and what is ready to come online next.</p><div class="grid"><div class="card span-4"><div class="metric">✓</div><div class="metric-label">Orbit installed</div></div><div class="card span-4"><div class="metric">${modules.filter(module=>module.status==='active').length}</div><div class="metric-label">Active modules</div></div><div class="card span-4"><div class="metric">${modules.filter(module=>module.status!=='active').length}</div><div class="metric-label">Foundation / roadmap modules</div></div></div><h2>Modules</h2><div class="grid">${modules.map(module=>`<article class="card span-4 module-card"><div class="eyebrow">${escapeHtml(module.id)}</div><h3>${escapeHtml(module.label)}</h3><p>${escapeHtml(module.description)}</p><span class="status ${module.status}">${module.status==='active'?'✓ Active':module.status==='foundation'?'Foundation laid':'Roadmap'}</span></article>`).join('')}</div>`;
+}

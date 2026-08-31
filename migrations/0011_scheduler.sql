@@ -1,0 +1,2 @@
+ALTER TABLE scheduled_posts ADD COLUMN paused INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE scheduled_posts ADD COLUMN name TEXT;

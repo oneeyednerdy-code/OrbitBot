@@ -1,0 +1,21 @@
+import { $, api, escapeHtml, state, title, usableRoles } from '../core.js';
+
+export function renderVerification(){
+  const config=state.bundle.config||{};const roles=usableRoles();const channels=state.bundle.channels||[];
+  const roleOptions=id=>'<option value="">Select role…</option>'+roles.map(role=>`<option value="${role.id}" ${role.id===id?'selected':''}>${escapeHtml(role.name)}</option>`).join('');
+  const channelOptions='<option value="">Disabled</option>'+channels.map(channel=>`<option value="${channel.id}" ${channel.id===config.admin_log_channel_id?'selected':''}>#${escapeHtml(channel.name)}</option>`).join('');
+  $('#content').innerHTML=`<div class="eyebrow">ACCESS + HUMAN VERIFICATION</div><h1 class="page-title">Verification</h1><p class="page-intro">Orbit's current working module. Rules acceptance and Cloudflare Turnstile can combine to grant a final access role.</p><div class="grid"><section class="card span-8"><h2>Access roles</h2><div class="callout">Orbit must sit above all three selected roles in Discord's role hierarchy.</div><div class="grid"><div class="span-6"><div class="field"><label for="rulesRole">Rules role</label><select id="rulesRole">${roleOptions(config.rules_role_id)}</select></div><div class="field"><label for="verifiedRole">Verified role</label><select id="verifiedRole">${roleOptions(config.verified_role_id)}</select></div></div><div class="span-6"><div class="field"><label for="combinedRole">Combined access role</label><select id="combinedRole">${roleOptions(config.combined_role_id)}</select></div><label class="check"><input id="removeCombined" type="checkbox" ${config.remove_combined_when_invalid!==0?'checked':''}>Remove combined access if either prerequisite is lost</label></div></div></section><aside class="card span-4"><div class="eyebrow">TURNSTILE</div><h2>Human verification</h2><p class="page-intro">Turnstile validation is handled server-side. Secrets never enter browser JavaScript.</p><span class="status active">✓ Configured in backend</span></aside><section class="card span-12"><h2>Action notifications</h2><div class="field"><label for="logChannel">Admin log channel</label><select id="logChannel">${channelOptions}</select></div><div class="grid"><label class="check span-6"><input id="notifyRules" type="checkbox" ${config.notify_rules_granted!==0?'checked':''}>Rules role granted</label><label class="check span-6"><input id="notifyVerified" type="checkbox" ${config.notify_verified_granted!==0?'checked':''}>Verified role granted</label><label class="check span-6"><input id="notifyGrant" type="checkbox" ${config.notify_combined_granted!==0?'checked':''}>Combined role granted</label><label class="check span-6"><input id="notifyRemove" type="checkbox" ${config.notify_combined_removed!==0?'checked':''}>Combined role removed</label></div><div class="button-row"><button id="saveVerification" class="btn" type="button">Save Verification</button></div><div id="saveStatus" class="notice hidden" aria-live="polite"></div></section></div>`;
+  $('#saveVerification').addEventListener('click',saveVerification);
+}
+
+
+async function saveVerification(){
+  const status=$('#saveStatus');status.className='notice';status.textContent='Saving…';status.classList.remove('hidden');
+  try{
+    const saved=await api(`/api/guilds/${state.guildId}/config`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({rules_role_id:$('#rulesRole').value,verified_role_id:$('#verifiedRole').value,combined_role_id:$('#combinedRole').value,remove_combined_when_invalid:$('#removeCombined').checked,admin_log_channel_id:$('#logChannel').value,notify_combined_granted:$('#notifyGrant').checked,notify_combined_removed:$('#notifyRemove').checked,notify_rules_granted:$('#notifyRules').checked,notify_verified_granted:$('#notifyVerified').checked})});
+    state.bundle.config=saved.config;status.className='notice success';status.textContent='Verification configuration saved.';
+  }catch(error){
+    status.className='notice error';
+    status.textContent=error.message==='role_hierarchy'?"One of the selected roles is at or above Orbit's role. Move Orbit higher in Discord and try again.":error.message==='invalid_roles'?'Select three different assignable roles.':`Could not save (${error.message}).`;
+  }
+}

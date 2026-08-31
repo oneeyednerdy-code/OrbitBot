@@ -1,0 +1,15 @@
+export const moduleCatalog = [
+  { id: 'moderation', label: 'Moderation', status: 'active', description: 'AutoMod, warnings, temporary actions, honeypot and moderation history.' },
+  { id: 'roles', label: 'Roles', status: 'active', description: 'Reaction, button, select-menu, automatic and temporary role systems.' },
+  { id: 'verification', label: 'Verification', status: 'active', description: 'Rules + Turnstile verification and combined access roles.' },
+  { id: 'tickets', label: 'Tickets', status: 'active', description: 'Dropdown categories, forms, routing, claiming and transcripts.' },
+  { id: 'leveling', label: 'Leveling', status: 'active', description: 'XP, ranks, rewards, exclusions and leaderboards.' },
+  { id: 'automation', label: 'Automation', status: 'active', description: 'Trigger, condition and action workflows.' },
+  { id: 'scheduler', label: 'Scheduled Posts', status: 'active', description: 'Batch queue, recurring posts, templates and delivery history.' },
+  { id: 'kofi', label: 'Ko-fi', status: 'active', description: 'Milestones, webhook events and Discord announcements.' },
+  { id: 'social', label: 'Social Publishing', status: 'active', description: 'Discord, Bluesky, Mastodon and Threads publishing are active; media-heavy adapters remain roadmap items.' },
+  { id: 'creator', label: 'Creator Notifications', status: 'active', description: 'RSS, YouTube feed and Twitch live notifications into Discord.' },
+  { id: 'diagnostics', label: 'Diagnostics', status: 'active', description: 'Configuration, permission and infrastructure health checks.' },
+  { id: 'community', label: 'Community', status: 'active', description: 'Welcome/goodbye, auto-role, custom commands, polls, reminders and sticky messages.' },
+  { id: 'security', label: 'Security Center', status: 'active', description: 'Permission risk scanning and reversible selected-channel incident lockdown.' },
+] as const;

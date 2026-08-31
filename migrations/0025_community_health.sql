@@ -1,0 +1,7 @@
+CREATE TABLE IF NOT EXISTS health_snapshots (
+ id INTEGER PRIMARY KEY AUTOINCREMENT,
+ guild_id TEXT NOT NULL,
+ score INTEGER NOT NULL,
+ summary_json TEXT NOT NULL,
+ created_at INTEGER NOT NULL
+);

@@ -1,0 +1,7 @@
+import type { Env } from '../../types';
+import { json } from '../../http/responses';
+export async function automationApi(request:Request,env:Env,guildId:string,actorId:string):Promise<Response>{
+ if(request.method==='GET'){const rows=await env.DB.prepare('SELECT * FROM automations WHERE guild_id=? ORDER BY created_at DESC').bind(guildId).all();return json({automations:rows.results});}
+ if(request.method==='POST'){const body=await request.json<any>();const now=Date.now();if(body.op==='toggle'){await env.DB.prepare('UPDATE automations SET enabled=?,updated_at=? WHERE id=? AND guild_id=?').bind(body.enabled?1:0,now,Number(body.id),guildId).run();return json({ok:true});}if(!body.name||!body.trigger||!Array.isArray(body.actions))return json({error:'invalid_automation'},400);const r=await env.DB.prepare('INSERT INTO automations(guild_id,name,enabled,trigger_json,conditions_json,actions_json,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(guildId,String(body.name),body.enabled===false?0:1,JSON.stringify(body.trigger),JSON.stringify(body.conditions||[]),JSON.stringify(body.actions),actorId,now,now).run();return json({ok:true,id:Number(r.meta.last_row_id)});}
+ if(request.method==='DELETE'){const id=Number(new URL(request.url).searchParams.get('id'));await env.DB.prepare('DELETE FROM automations WHERE id=? AND guild_id=?').bind(id,guildId).run();return json({ok:true});}return json({error:'method_not_allowed'},405);
+}
