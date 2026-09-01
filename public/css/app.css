@@ -168,3 +168,11 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .field label[for="spContent"]{flex-direction:row;align-items:center}
 .scheduler-count{margin-left:auto;font-weight:650}
 .scheduler-count.over-limit{color:var(--danger)}
+
+/* alpha.39 visible build version */
+.main{display:flex;min-height:100vh;flex-direction:column}
+.main>.content{width:100%;flex:1 0 auto;margin:0 auto;padding-bottom:40px}
+.version-badge{display:inline-flex;margin-top:10px;padding:5px 9px;border:1px solid #3b384a;border-radius:999px;background:rgba(139,92,246,.1);color:#c4b5fd;font-size:12px;font-weight:800;letter-spacing:.3px}
+.app-footer{display:flex;align-items:center;justify-content:center;gap:8px;max-width:1240px;width:100%;margin:0 auto;padding:16px 30px 78px;border-top:1px solid var(--line);color:#777485;font-size:12px}
+@media(max-width:940px){.app-footer{padding:15px 18px 78px}}
+@media(max-width:560px){.app-footer{flex-wrap:wrap;padding-left:14px;padding-right:14px}}

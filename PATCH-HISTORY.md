@@ -50,3 +50,14 @@
 - Switched preview updates to safe text rendering.
 - Added a live 2,000-character counter that includes an optional role mention.
 - Rejected oversized messages instead of silently truncating them at delivery.
+
+## 0.1.0-alpha.39 — Visible Build Version
+- Added the current Orbit version beneath the login-page wordmark.
+- Added the current Orbit version to a persistent dashboard footer.
+- Kept diagnostic downloads and bug reports aligned with the displayed build number.
+
+## 0.1.0-alpha.40 — Diagnostics Schema Recovery
+- Prevented a missing `orbit_error_log` table from crashing Diagnostics and Logs.
+- Added a precise migration-0029 warning with the `npm run db:remote` recovery command.
+- Kept core audit events available while verbose error history is awaiting migration.
+- Continued surfacing unrelated D1 failures as real server errors.

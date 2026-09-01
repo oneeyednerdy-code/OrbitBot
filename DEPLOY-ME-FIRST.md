@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.38 — Deploy Me First
+# Orbit v0.1.0-alpha.40 — Deploy Me First
 
 This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain from the original Orbit schema through alpha.34. Alpha.34 adds `0029_social_auth_verbose_errors.sql` for OAuth context and sanitized server error logging.
 

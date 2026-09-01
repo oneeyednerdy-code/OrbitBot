@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.38
+# Start Here — Orbit v0.1.0-alpha.40
 
-Orbit alpha.38 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.40 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -23,3 +23,17 @@ If Discord reset OrbitBot’s token because of excessive Gateway connections, **
 ## Alpha.38 scheduler preview
 
 The Scheduled Posts preview now preserves entered line breaks and blank lines. Its live counter includes the selected role mention in Discord's 2,000-character message limit. No migration, secret, OAuth scope, or Discord permission is added.
+
+## Alpha.39 visible version
+
+The login page and dashboard footer display the deployed Orbit build number so screenshots and bug reports can be matched to the correct package immediately.
+
+## Alpha.40 Diagnostics/Logs recovery
+
+Alpha.40 prevents a missing `orbit_error_log` table from crashing the entire Diagnostics and Logs routes. Orbit now identifies migration `0029_social_auth_verbose_errors.sql` as missing and directs the operator to run:
+
+```bash
+npm run db:remote
+```
+
+Applying the migration remains required to enable verbose server error history.

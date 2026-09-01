@@ -61,8 +61,15 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
       checks.push(check(`hierarchy_${label.toLowerCase()}`, Boolean(role && role.position < top), `${label} role hierarchy`, role && role.position < top ? `Orbit can manage ${role.name}.` : `${label} role is at or above Orbit's highest role.`));
     }
   }
+  let recentErrors: any[] = [];
+  try {
+    recentErrors = (await env.DB.prepare('SELECT request_id,route,method,status,error_code,detail_json,created_at FROM orbit_error_log WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>()).results.map((row:any)=>({request_id:row.request_id,route:row.route,method:row.method,status:row.status,error_code:row.error_code,detail:safeJson(row.detail_json),created_at:row.created_at}));
+    checks.push(check('verbose_error_log', true, 'Verbose error log', 'D1 migration 0029 is applied and sanitized server error history is available.'));
+  } catch (error: any) {
+    if (!missingErrorLogTable(error)) throw error;
+    checks.push(check('verbose_error_log', false, 'Verbose error log', 'D1 migration 0029_social_auth_verbose_errors.sql is missing. Run npm run db:remote, then run Diagnostics again.'));
+  }
   const score = Math.round((checks.filter(c=>c.ok).length / Math.max(checks.length,1)) * 100);
-  const recentErrors = (await env.DB.prepare('SELECT request_id,route,method,status,error_code,detail_json,created_at FROM orbit_error_log WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>()).results.map((row:any)=>({request_id:row.request_id,route:row.route,method:row.method,status:row.status,error_code:row.error_code,detail:safeJson(row.detail_json),created_at:row.created_at}));
   const result = { score, status: score === 100 ? 'healthy' : score >= 75 ? 'attention' : 'critical', checks, recent_errors: recentErrors, generated_at: Date.now() };
   return result;
 }
@@ -74,3 +81,4 @@ export async function diagnosticsApi(env: Env, guildId: string, requestedBy: str
 }
 function check(code:string, ok:boolean, label:string, detail:string){return {code,ok,label,detail,severity:ok?'ok':'warning'};}
 function safeJson(value:string){try{return JSON.parse(value||'{}')}catch{return {raw:String(value||'').slice(0,1200)}}}
+function missingErrorLogTable(error:any){return /no such table:\s*orbit_error_log/i.test(String(error?.message||error||''))}

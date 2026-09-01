@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.38 — Build Validation
+# Orbit v0.1.0-alpha.40 — Build Validation
 
 Validated on 2026-09-01.
 
@@ -20,6 +20,9 @@ Validated on 2026-09-01.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
+- Login page and dashboard footer both display `v0.1.0-alpha.40`.
+- Diagnostics and Logs return usable responses when `orbit_error_log` is absent and name migration `0029_social_auth_verbose_errors.sql` as the required recovery.
+- Unexpected D1 failures other than the specifically detected missing table continue to propagate as server errors.
 
 ## Environment limitation
 
