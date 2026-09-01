@@ -1,5 +1,5 @@
 import { state } from './core.js';
-import { renderLoading, renderError, renderNoServers, renderInstallNeeded } from './pages/common.js';
+import { renderLoading, renderError, renderNoServers, renderInstallNeeded, renderGuildAuthorizationError } from './pages/common.js';
 import { renderOverview } from './pages/overview.js';
 import { renderVerification } from './pages/verification.js';
 import { renderFoundation } from './pages/foundation.js';
@@ -27,7 +27,7 @@ import { renderOnboarding } from './pages/onboarding.js';
 import { renderConnections } from './pages/connections.js';
 import { renderBugs } from './pages/bugs.js';
 
-export { renderLoading, renderError, renderNoServers, renderInstallNeeded };
+export { renderLoading, renderError, renderNoServers, renderInstallNeeded, renderGuildAuthorizationError };
 
 export function renderPage(){
   if(!state.bundle){if(!state.guildId)renderNoServers();return}

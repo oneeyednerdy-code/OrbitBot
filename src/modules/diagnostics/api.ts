@@ -19,7 +19,26 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
   const featureRows = await env.DB.prepare('SELECT feature_key FROM guild_features WHERE guild_id=? AND enabled=1').bind(guildId).all<any>();
   const enabled = new Set(featureRows.results.map((row:any)=>row.feature_key));
   if (enabled.has('scheduler') || enabled.has('automation') || enabled.has('social')) checks.push(check('queue', Boolean(env.JOBS), 'Job Queue', env.JOBS ? 'Orbit job queue binding is available.' : 'The job queue binding is missing. Scheduled or background work may fail.'));
-  if (enabled.has('protection') || enabled.has('leveling') || enabled.has('creator_community')) checks.push(check('gateway', Boolean(env.GATEWAY), 'Discord Gateway', env.GATEWAY ? 'Discord Gateway Durable Object binding is available.' : 'The Discord Gateway binding is missing.'));
+  if (enabled.has('protection') || enabled.has('leveling') || enabled.has('creator_community')) {
+    checks.push(check('gateway', Boolean(env.GATEWAY), 'Discord Gateway', env.GATEWAY ? 'Discord Gateway Durable Object binding is available.' : 'The Discord Gateway binding is missing.'));
+    if (env.GATEWAY) {
+      try {
+        const id = env.GATEWAY.idFromName('discord');
+        const gatewayResponse = await env.GATEWAY.get(id).fetch('https://gateway/status');
+        const gateway = await gatewayResponse.json<any>();
+        const healthy = gateway.state === 'ready' || gateway.state === 'handshaking' || gateway.state === 'connecting';
+        const detail = gateway.state === 'halted'
+          ? `Gateway halted safely: ${gateway.halt_reason || 'unknown'}. Orbit will not burn additional Discord IDENTIFY attempts.`
+          : gateway.state === 'backoff'
+            ? `Gateway is backing off safely until ${gateway.next_attempt_at ? new Date(gateway.next_attempt_at).toISOString() : 'the next retry window'}.`
+            : `Gateway runtime state: ${gateway.state}.`;
+        checks.push(check('gateway_runtime', healthy, 'Gateway runtime', detail));
+        if (gateway.session_start_remaining != null) checks.push(check('gateway_identify_budget', Number(gateway.session_start_remaining) > 5, 'Gateway IDENTIFY budget', `${gateway.session_start_remaining} of ${gateway.session_start_total ?? '?'} session starts remain in Discord's current window.`));
+      } catch {
+        checks.push(check('gateway_runtime', false, 'Gateway runtime', 'Orbit could not read the Gateway runtime status.'));
+      }
+    }
+  }
   if (enabled.has('alerts') || enabled.has('social')) {
     const connectionCount = await env.DB.prepare("SELECT COUNT(*) count FROM creator_account_connections WHERE guild_id=? AND status='connected'").bind(guildId).first<{count:number}>();
     checks.push(check('credential_encryption', Boolean(env.SOCIAL_CREDENTIAL_KEY), 'Connection encryption', env.SOCIAL_CREDENTIAL_KEY ? 'Server-side social credential encryption is configured.' : 'SOCIAL_CREDENTIAL_KEY is missing, so account connections are disabled.'));

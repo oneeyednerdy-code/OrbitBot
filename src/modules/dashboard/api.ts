@@ -33,8 +33,14 @@ export async function listManageableGuilds(env: Env, session: SessionRow): Promi
   let token: string;
   try { token = await openSeal(session.access_token, env.SESSION_SECRET); } catch { return json({ error: 'unauthorized' }, 401); }
   const response = await discord(env, '/users/@me/guilds', {}, token);
-  if (!response.ok) return json({ error: 'discord' }, 502);
-  const guilds = ((await response.json()) as any[]).filter(guild => canManageGuild(guild.permissions));
+  if (response.status === 401 || response.status === 403) return json({ error: 'discord_reauth_required', detail: 'Discord no longer accepts this dashboard authorization. Reconnect Discord.' }, 401);
+  if (response.status === 429) {
+    let retryAfter = 1;
+    try { const body = await response.clone().json<any>(); retryAfter = Math.max(1, Number(body?.retry_after || 1)); } catch {}
+    return json({ error: 'discord_rate_limited', detail: 'Discord temporarily rate-limited the server list.', retry_after: retryAfter }, 429);
+  }
+  if (!response.ok) return json({ error: 'discord_authorization_failed', detail: `Discord server lookup returned HTTP ${response.status}.` }, 502);
+  const guilds = ((await response.json()) as any[]).filter(guild => guild?.owner === true || canManageGuild(String(guild?.permissions ?? '0')));
   return json(guilds.map(guild => ({ id: guild.id, name: guild.name, icon: guild.icon, owner: guild.owner })));
 }
 
@@ -69,7 +75,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'onboarding') return onboardingApi(request, env, guildId, session.user_id);
   if (action === 'connections') return connectionsApi(request, env, guildId, session.user_id);
   if (action === 'bug-reports') return bugReportsApi(request, env, guildId, session.user_id);
-  if (action === 'start-gateway' && request.method === 'POST') { const id=env.GATEWAY.idFromName('discord'); await env.GATEWAY.get(id).fetch('https://gateway/start',{method:'POST'}); return json({ok:true}); }
+  if (action === 'start-gateway' && request.method === 'POST') { const id=env.GATEWAY.idFromName('discord'); const response=await env.GATEWAY.get(id).fetch('https://gateway/start',{method:'POST'}); const data=await response.json<any>(); return json(data,response.status); }
   return json({ error: 'bad_request' }, 400);
 }
 

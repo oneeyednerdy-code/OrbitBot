@@ -1,12 +1,58 @@
 import type { Env } from '../types';
 
 const DISCORD_API = 'https://discord.com/api/v10';
+const MAX_RATE_LIMIT_WAIT_MS = 10_000;
+let globalBlockedUntil = 0;
+const routeBlockedUntil = new Map<string, number>();
+
+function routeKey(path: string, method: string): string {
+  const parts = path.split('/').filter(Boolean);
+  const majorIndex = parts.findIndex(part => part === 'guilds' || part === 'channels' || part === 'webhooks');
+  return `${method.toUpperCase()}:${parts.map((part, index) => (/^\d{16,20}$/.test(part) && index !== majorIndex + 1 ? ':id' : part)).join('/')}`;
+}
+
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function retryAfterMs(response: Response, body?: any): number {
+  const seconds = Number(response.headers.get('retry-after') || body?.retry_after || 0);
+  return Number.isFinite(seconds) && seconds > 0 ? Math.ceil(seconds * 1000) : 0;
+}
 
 export async function discord(env: Env, path: string, init: RequestInit = {}, userToken?: string): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set('authorization', userToken ? `Bearer ${userToken}` : `Bot ${env.DISCORD_BOT_TOKEN}`);
   if (init.body) headers.set('content-type', 'application/json');
-  return fetch(`${DISCORD_API}${path}`, { ...init, headers });
+  const method = init.method || 'GET';
+  const key = routeKey(path, method);
+  const blockedUntil = Math.max(globalBlockedUntil, routeBlockedUntil.get(key) || 0);
+  const wait = blockedUntil - Date.now();
+  if (wait > 0 && wait <= MAX_RATE_LIMIT_WAIT_MS) await delay(wait);
+
+  let response = await fetch(`${DISCORD_API}${path}`, { ...init, headers });
+  updateBucketState(response, key);
+  if (response.status !== 429) return response;
+
+  let body: any = null;
+  try { body = await response.clone().json<any>(); } catch {}
+  const retryMs = retryAfterMs(response, body);
+  const global = response.headers.get('x-ratelimit-global') === 'true' || body?.global === true;
+  const until = Date.now() + retryMs;
+  if (global) globalBlockedUntil = Math.max(globalBlockedUntil, until);
+  else routeBlockedUntil.set(key, Math.max(routeBlockedUntil.get(key) || 0, until));
+
+  if (retryMs <= 0 || retryMs > MAX_RATE_LIMIT_WAIT_MS) return response;
+  await delay(retryMs + Math.floor(Math.random() * 250));
+  response = await fetch(`${DISCORD_API}${path}`, { ...init, headers });
+  updateBucketState(response, key);
+  return response;
+}
+
+function updateBucketState(response: Response, key: string): void {
+  if (response.headers.get('x-ratelimit-remaining') !== '0') return;
+  const resetAfter = Number(response.headers.get('x-ratelimit-reset-after') || 0);
+  if (Number.isFinite(resetAfter) && resetAfter > 0) routeBlockedUntil.set(key, Date.now() + Math.ceil(resetAfter * 1000));
 }
 
 export async function addRole(env: Env, guildId: string, userId: string, roleId: string): Promise<Response> {

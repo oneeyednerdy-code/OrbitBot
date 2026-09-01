@@ -37,7 +37,7 @@
     "TURNSTILE_SITE_KEY": "0x4AAAAAAEdM8FKnSCsoDd_s",
     "TURNSTILE_HOSTNAMES": "orbitbot.oneeyednerdy.workers.dev",
     "ORBIT_OPERATOR_USER_IDS": ""
-    // Optional integrations are configured as secrets: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, SOCIAL_CREDENTIAL_KEY
+    // Optional integrations are configured as secrets: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, THREADS_CLIENT_ID, THREADS_CLIENT_SECRET, SOCIAL_CREDENTIAL_KEY
   },
   // Optional Cloudflare bindings. KV/R2 are not required for the current feature set.
   // "kv_namespaces": [{ "binding": "CACHE", "id": "YOUR-KV-ID" }],

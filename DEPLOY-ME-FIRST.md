@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.34 — Deploy Me First
+# Orbit v0.1.0-alpha.37 — Deploy Me First
 
 This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain from the original Orbit schema through alpha.34. Alpha.34 adds `0029_social_auth_verbose_errors.sql` for OAuth context and sanitized server error logging.
 
@@ -113,7 +113,7 @@ For a local test database:
 npm run db:local
 ```
 
-The complete release contains 26 ordered migrations. Do not manually skip migration files.
+The complete release contains 29 ordered migrations. Do not manually skip migration files.
 
 ## 9. Deploy
 
@@ -121,7 +121,7 @@ The complete release contains 26 ordered migrations. Do not manually skip migrat
 npm run deploy
 ```
 
-Cloudflare creates the Durable Object class migration during deployment. The cron runs once per minute and keeps the Discord Gateway runtime active while also dispatching scheduled work and creator alerts.
+Cloudflare creates the Durable Object class migration during deployment. The cron runs once per minute and asks the single Discord Gateway Durable Object to remain active while also dispatching scheduled work and creator alerts. Alpha.36 makes this start request idempotent and safe: it does not create another connection while one is connecting/open, and terminal Gateway failures halt instead of looping.
 
 ## 10. Install/reinstall Orbit in Discord
 

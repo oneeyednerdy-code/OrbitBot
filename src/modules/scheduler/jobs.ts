@@ -13,11 +13,14 @@ export async function handleQueue(batch: MessageBatch<OrbitJob>, env: Env): Prom
   }
 }
 async function dispatchPost(env:Env,id:number){
-  const post=await env.DB.prepare("SELECT * FROM scheduled_posts WHERE id=? AND status='queued' AND paused=0").bind(id).first<any>();if(!post)return;const sec=await env.DB.prepare('SELECT lockdown_active FROM security_configs WHERE guild_id=?').bind(post.guild_id).first<any>();if(sec?.lockdown_active)return;
-  const content=parse(post.content_json);const now=Date.now();const res=await discord(env,`/channels/${post.channel_id}/messages`,{method:'POST',body:JSON.stringify({content:String(content.content||'').slice(0,2000)})});
-  await env.DB.prepare('INSERT INTO scheduled_post_runs(scheduled_post_id,guild_id,status,discord_message_id,error_code,attempted_at) VALUES(?,?,?,?,?,?)').bind(id,post.guild_id,res.ok?'sent':'failed',res.ok?(await res.clone().json<any>()).id:null,res.ok?null:String(res.status),now).run();
-  if(res.ok&&post.recurrence_rule){const next=nextRun(now,post.recurrence_rule);await env.DB.prepare("UPDATE scheduled_posts SET scheduled_for=?,last_dispatch_attempt_at=?,status='queued',updated_at=? WHERE id=?").bind(next,now,now,id).run();}
-  else await env.DB.prepare('UPDATE scheduled_posts SET status=?,last_dispatch_attempt_at=?,updated_at=? WHERE id=?').bind(res.ok?'sent':'failed',now,now,id).run();
+  const claim=await env.DB.prepare("UPDATE scheduled_posts SET status='sending',updated_at=? WHERE id=? AND status='queued' AND paused=0").bind(Date.now(),id).run();if(!claim.meta.changes)return;const post=await env.DB.prepare('SELECT * FROM scheduled_posts WHERE id=?').bind(id).first<any>();if(!post)return;const sec=await env.DB.prepare('SELECT lockdown_active FROM security_configs WHERE guild_id=?').bind(post.guild_id).first<any>();if(sec?.lockdown_active){await env.DB.prepare("UPDATE scheduled_posts SET status='queued',updated_at=? WHERE id=?").bind(Date.now(),id).run();return;}
+  const content=parse(post.content_json);const now=Date.now();const roleId=String(content.ping_role_id||'')||null;let errorCode:string|null=null;
+  if(roleId){const rolesResponse=await discord(env,`/guilds/${post.guild_id}/roles`);if(!rolesResponse.ok)errorCode='role_validation_failed';else{const roles=await rolesResponse.json<any[]>();const role=roles.find(role=>String(role.id)===roleId&&!role.managed&&role.mentionable);if(!role)errorCode='role_unavailable';}}
+  let res:Response|null=null;let discordMessageId:string|null=null;
+  if(!errorCode){const prefix=roleId?`<@&${roleId}> `:'';const text=`${prefix}${String(content.content||'')}`.slice(0,2000);res=await discord(env,`/channels/${post.channel_id}/messages`,{method:'POST',body:JSON.stringify({content:text,allowed_mentions:{parse:[],roles:roleId?[roleId]:[]}})});if(res.ok)discordMessageId=(await res.clone().json<any>()).id;else errorCode=`discord_${res.status}`;}
+  const sent=Boolean(res?.ok);await env.DB.prepare('INSERT INTO scheduled_post_runs(scheduled_post_id,guild_id,status,discord_message_id,error_code,attempted_at,ping_role_id) VALUES(?,?,?,?,?,?,?)').bind(id,post.guild_id,sent?'sent':'failed',discordMessageId,errorCode,now,roleId).run();
+  if(sent&&post.recurrence_rule){const next=nextRun(now,post.recurrence_rule);await env.DB.prepare("UPDATE scheduled_posts SET scheduled_for=?,last_dispatch_attempt_at=?,status='queued',updated_at=? WHERE id=?").bind(next,now,now,id).run();}
+  else await env.DB.prepare('UPDATE scheduled_posts SET status=?,last_dispatch_attempt_at=?,updated_at=? WHERE id=?').bind(sent?'sent':'failed',now,now,id).run();
 }
 function nextRun(from:number,rule:string){const d=new Date(from);if(rule==='daily')return from+86400000;if(rule==='weekly')return from+604800000;if(rule==='monthly'){d.setUTCMonth(d.getUTCMonth()+1);return d.getTime();}return from+86400000;}
 function parse(raw:string){try{return JSON.parse(raw)}catch{return {content:raw}}}

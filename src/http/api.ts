@@ -29,7 +29,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   const guildId = match[1];
   const action = match[2] ?? 'config';
   const authorization = await managedGuild(request, env, guildId);
-  if (!authorization) return json({ error: 'forbidden' }, 403);
+  if (!authorization.ok) return json({ error: authorization.error, detail: authorization.detail, retry_after: authorization.retry_after }, authorization.status);
   try {
     return await handleGuildApi(request, env, guildId, action, authorization.guild, authorization.session);
   } catch (error: any) {

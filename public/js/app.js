@@ -1,5 +1,5 @@
 import { $, api, escapeHtml, state } from './core.js';
-import { renderError, renderInstallNeeded, renderLoading, renderNoServers, renderPage } from './pages.js';
+import { renderError, renderGuildAuthorizationError, renderInstallNeeded, renderLoading, renderNoServers, renderPage } from './pages.js';
 import { initDiagnosticsDrawer, refreshDiagnostics } from './diagnostics-drawer.js';
 
 const pageFeatures={
@@ -26,7 +26,7 @@ async function selectGuild(guildId){
     if(!state.bundle.onboarding?.completed_at){state.page='onboarding';history.replaceState(null,'','#onboarding');}
     else if(!pageAllowed(state.page)){state.page='overview';history.replaceState(null,'','#overview');}
     setActiveNav();renderPage();refreshDiagnostics(false);
-  }catch(error){state.bundle=null;if(error.message==='bot_not_in_guild')renderInstallNeeded(error.payload?.install_url||`/oauth/install?guild_id=${guildId}`);else renderError(`Could not load this server (${escapeHtml(error.message)}).`);}
+  }catch(error){state.bundle=null;if(error.message==='bot_not_in_guild')renderInstallNeeded(error.payload?.install_url||`/oauth/install?guild_id=${guildId}`);else renderGuildAuthorizationError(error);}
 }
 function enabledFeatures(){return new Set((state.bundle?.features||[]).filter(x=>Number(x.enabled)===1).map(x=>x.feature_key));}
 function pageAllowed(page){if(['overview','settings','features','onboarding','diagnostics'].includes(page))return true;if(page==='bugs')return Boolean(state.me?.operator);if(page==='connections'){const enabled=enabledFeatures();return enabled.has('alerts')||enabled.has('social')}const feature=pageFeatures[page];return !feature||enabledFeatures().has(feature);}

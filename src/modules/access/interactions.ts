@@ -12,7 +12,11 @@ export async function handleInteractions(request: Request, env: Env): Promise<Re
   const timestamp = request.headers.get('x-signature-timestamp');
   const raw = await request.text();
   if (!signature || !timestamp || !(await verifyEd25519(env.DISCORD_PUBLIC_KEY, signature, timestamp + raw))) return new Response('bad signature', { status: 401 });
-  const interaction = JSON.parse(raw);
+  const requestAge = Math.abs(Date.now() - Number(timestamp) * 1000);
+  if (!Number.isFinite(requestAge) || requestAge > 5 * 60_000) return new Response('stale interaction', { status: 401 });
+  let interaction: any;
+  try { interaction = JSON.parse(raw); }
+  catch { return new Response('invalid json', { status: 400 }); }
   if (interaction.type === 1) return json({ type: 1 });
   const ticketResponse = await handleTicketInteraction(env, interaction);
   if (ticketResponse) return json(ticketResponse);
