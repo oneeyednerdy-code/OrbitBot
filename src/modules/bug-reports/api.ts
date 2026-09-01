@@ -3,7 +3,7 @@ import { json } from '../../http/responses';
 import { diagnosticsSnapshot } from '../diagnostics/api';
 import { sha256 } from '../../security/crypto';
 
-const VERSION = '0.1.0-alpha.37';
+const VERSION = '0.1.0-alpha.38';
 const MAX_TEXT = 4000;
 
 function cleanText(value: unknown, max = MAX_TEXT): string {

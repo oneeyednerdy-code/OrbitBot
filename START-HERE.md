@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.37
+# Start Here — Orbit v0.1.0-alpha.38
 
-Orbit alpha.37 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.38 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -19,3 +19,7 @@ If the dashboard previously showed `Could not load this server (forbidden)`, alp
 
 ## Alpha.36 emergency Gateway recovery
 If Discord reset OrbitBot’s token because of excessive Gateway connections, **deploy alpha.36 before generating/setting the replacement token**. Then follow `ALPHA36-RECOVERY.md`. The new Gateway implementation preflights `/gateway/bot`, resumes existing sessions instead of repeatedly identifying, halts on terminal close codes, and protects the remaining IDENTIFY budget.
+
+## Alpha.38 scheduler preview
+
+The Scheduled Posts preview now preserves entered line breaks and blank lines. Its live counter includes the selected role mention in Discord's 2,000-character message limit. No migration, secret, OAuth scope, or Discord permission is added.

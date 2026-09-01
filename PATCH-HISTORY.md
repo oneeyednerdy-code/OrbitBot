@@ -44,3 +44,9 @@
 - Added stale and malformed interaction rejection.
 - Added safe scheduled-role pings, delivery history, Retry, View in Discord, and duplicate-dispatch protection.
 - Added native Discord event recurrence, complete scheduler role visibility, and a clearer Moderation + Honeypot navigation label.
+
+## 0.1.0-alpha.38 — Scheduler Preview Fidelity
+- Preserved line breaks, blank lines, and long-line wrapping in the Scheduled Posts preview.
+- Switched preview updates to safe text rendering.
+- Added a live 2,000-character counter that includes an optional role mention.
+- Rejected oversized messages instead of silently truncating them at delivery.

@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.37 — Build Validation
+# Orbit v0.1.0-alpha.38 — Build Validation
 
-Validated on 2026-08-31.
+Validated on 2026-09-01.
 
 ## Passed
 
@@ -18,6 +18,8 @@ Validated on 2026-08-31.
   - persisted Durable Object safety state,
   - IDENTIFY budget floor protection.
 - Package contains no `node_modules`.
+- Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
+- Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
 
 ## Environment limitation
 
@@ -28,4 +30,4 @@ npm install
 npm run typecheck
 ```
 
-Then deploy alpha.36 **before** installing a replacement Discord bot token if Discord has already reset the token.
+If Discord previously reset the bot token, follow `ALPHA36-RECOVERY.md` before installing its replacement.
