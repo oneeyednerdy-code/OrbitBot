@@ -13,13 +13,16 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
     const body = await request.json<any>();
     const startMs = Number(body.starts_at);
     const endMs = body.ends_at ? Number(body.ends_at) : startMs + 3600000;
+    const repeat = normalizeRepeat(body.repeat);
     if (!body.name || !Number.isFinite(startMs)) return json({ error: 'name_and_start_required' }, 400);
     if (startMs <= Date.now() + 30_000) return json({ error: 'event_start_must_be_future', detail: 'Discord scheduled events need a future start time.' }, 400);
     if (!Number.isFinite(endMs) || endMs <= startMs) return json({ error: 'event_end_invalid', detail: 'End time must be after the start time.' }, 400);
+    if (repeat && !body.create_discord_event) return json({ error: 'repeat_requires_discord_event', detail: 'Repeating events require Create Discord Scheduled Event to be enabled.' }, 400);
 
     const now = Date.now();
     const start = new Date(startMs).toISOString();
     const end = new Date(endMs).toISOString();
+    const recurrenceRule = repeat ? discordRecurrence(repeat, start) : null;
     let discordEventId: string | null = null;
 
     if (body.create_discord_event) {
@@ -34,6 +37,7 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
           scheduled_start_time: start,
           scheduled_end_time: end,
           entity_metadata: { location: String(body.location || 'Discord').slice(0, 100) },
+          recurrence_rule: recurrenceRule || undefined,
         }),
       });
       if (!response.ok) {
@@ -45,9 +49,9 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
       discordEventId = created.id;
     }
 
-    const result = await env.DB.prepare(`INSERT INTO community_events(guild_id,name,description,starts_at,ends_at,discord_channel_id,ping_role_id,signup_limit,discord_event_id,status,created_by,created_at,updated_at)
-      VALUES(?,?,?,?,?,?,?,?,?,'scheduled',?,?,?)`)
-      .bind(guildId, body.name, body.description || null, startMs, body.ends_at ? endMs : null, body.discord_channel_id || null, body.ping_role_id || null, Number(body.signup_limit) || null, discordEventId, actorId, now, now).run();
+    const result = await env.DB.prepare(`INSERT INTO community_events(guild_id,name,description,starts_at,ends_at,discord_channel_id,ping_role_id,signup_limit,discord_event_id,status,created_by,created_at,updated_at,recurrence_rule_json)
+      VALUES(?,?,?,?,?,?,?,?,?,'scheduled',?,?,?,?)`)
+      .bind(guildId, body.name, body.description || null, startMs, body.ends_at ? endMs : null, body.discord_channel_id || null, body.ping_role_id || null, Number(body.signup_limit) || null, discordEventId, actorId, now, now, recurrenceRule ? JSON.stringify({ preset: repeat, discord: recurrenceRule }) : null).run();
     return json({ ok: true, id: Number(result.meta.last_row_id), discord_event_id: discordEventId });
   }
 
@@ -68,6 +72,18 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
     return json({ ok: true });
   }
   return json({ error: 'method_not_allowed' }, 405);
+}
+
+function normalizeRepeat(value: unknown): 'daily'|'weekly'|'biweekly'|'monthly'|null {
+  const repeat=String(value||'');
+  return repeat==='daily'||repeat==='weekly'||repeat==='biweekly'||repeat==='monthly'?repeat:null;
+}
+
+function discordRecurrence(repeat:'daily'|'weekly'|'biweekly'|'monthly',start:string){
+  if(repeat==='daily')return {start,frequency:3,interval:1};
+  if(repeat==='weekly')return {start,frequency:2,interval:1};
+  if(repeat==='biweekly')return {start,frequency:2,interval:2};
+  return {start,frequency:1,interval:1};
 }
 
 async function discordFailure(response: Response): Promise<any> {

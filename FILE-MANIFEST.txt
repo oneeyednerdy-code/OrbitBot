@@ -65,6 +65,7 @@ migrations/0027_adaptive_onboarding.sql
 migrations/0028_diagnostics_bug_reports.sql
 migrations/0029_social_auth_verbose_errors.sql
 migrations/0030_scheduler_role_delivery.sql
+migrations/0031_event_recurrence.sql
 package.json
 public/css/app.css
 public/css/verify.css

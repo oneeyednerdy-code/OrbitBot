@@ -43,3 +43,4 @@
 - Added randomized invalid-session reconnect delay.
 - Added stale and malformed interaction rejection.
 - Added safe scheduled-role pings, delivery history, Retry, View in Discord, and duplicate-dispatch protection.
+- Added native Discord event recurrence, complete scheduler role visibility, and a clearer Moderation + Honeypot navigation label.

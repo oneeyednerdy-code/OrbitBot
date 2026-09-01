@@ -17,6 +17,10 @@ Alpha.37 applies Discord's current production guidance beyond the alpha.36 Gatew
 - Scheduled delivery now exposes Scheduled, Sending, Posted, Failed, Paused, next-run, and last-posted states.
 - Successful deliveries include a View in Discord link; failures include their delivery error and a Retry action.
 - Dispatch uses an atomic Sending claim to prevent duplicate deliveries when cron and Send Now overlap.
+- Discord Events now includes a Repeat dropdown for daily, weekly, every-two-weeks, and monthly native Discord recurrence.
+- The Events list shows the saved recurrence and deleting an Orbit event removes the Discord series Orbit created.
+- Scheduled Posts now displays every ordinary server role; roles Discord marks non-mentionable remain visible and disabled with setup guidance.
+- The navigation label is now Moderation + Honeypot so the Honeypot configuration is easier to find.
 
 ## Existing safeguards retained
 
@@ -30,4 +34,4 @@ Alpha.37 applies Discord's current production guidance beyond the alpha.36 Gatew
 - Install permissions remain granular; Administrator is not requested.
 - Interaction signatures, OAuth state, CSRF, secure cookies, Turnstile, role hierarchy, and secret redaction remain enforced.
 
-Migration `0030_scheduler_role_delivery.sql` adds the pinged role to delivery history and an index for recent runs. No new secret, OAuth scope, or Discord permission is required.
+Migrations `0030_scheduler_role_delivery.sql` and `0031_event_recurrence.sql` add pinged-role delivery history and Discord event recurrence metadata. No new secret, OAuth scope, or Discord permission is required.
