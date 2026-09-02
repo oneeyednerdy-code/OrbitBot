@@ -26,6 +26,8 @@ RELEASE-NOTES-0.1.0-alpha.38.md
 RELEASE-NOTES-0.1.0-alpha.39.md
 RELEASE-NOTES-0.1.0-alpha.40.md
 RELEASE-NOTES-0.1.0-alpha.41.md
+RELEASE-NOTES-0.1.0-alpha.42.md
+RELEASE-NOTES-0.1.0-alpha.43.md
 SECURITY.md
 START-HERE.md
 docs/history/CLOUDFLARE-FOUNDATION.md
@@ -70,6 +72,7 @@ migrations/0028_diagnostics_bug_reports.sql
 migrations/0029_social_auth_verbose_errors.sql
 migrations/0030_scheduler_role_delivery.sql
 migrations/0031_event_recurrence.sql
+migrations/0032_role_gated_community_alerts.sql
 package.json
 public/css/app.css
 public/css/verify.css

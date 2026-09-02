@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.41
+# Start Here — Orbit v0.1.0-alpha.43
 
-Orbit alpha.41 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.43 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -43,3 +43,13 @@ Applying the migration remains required to enable verbose server error history.
 Open **Verification** in the Orbit dashboard, save the Rules, Verified, and Combined roles, then choose the Discord verification channel and select **Post Verification Panel**. Do not post a permanent verification link. Each member clicks the panel button and receives a private link bound to their Discord account that expires after 15 minutes.
 
 The Discord application must keep its Interactions Endpoint URL set to `https://YOUR-ORBIT-DOMAIN/interactions`.
+
+## Alpha.42 role-gated Community Alerts
+
+Run `npm run db:remote` before deploying to apply migration `0032_role_gated_community_alerts.sql`. In **Creator Directory**, add each creator's Discord user ID and Twitch name and/or YouTube channel ID. Then open **Community Alerts**, enable **Role-gated automation**, select the eligibility role and destination Discord channel, and save.
+
+The selected eligibility role is checked silently and is not pinged. An optional separate ping role may be selected if that role is marked Mentionable in Discord. Twitch detection requires `TWITCH_CLIENT_ID` and `TWITCH_CLIENT_SECRET`; YouTube live detection requires `YOUTUBE_API_KEY`.
+
+## Alpha.43 Tickets page guard
+
+Tickets now ignores late API responses after you navigate to another page or server. No migration, secret, OAuth scope, or Discord permission is added by alpha.43.

@@ -68,3 +68,16 @@
 - Added a dashboard action that posts a **Verify with Orbit** button in a selected Discord channel.
 - Button clicks create private, one-use verification links bound to the clicking Discord member and expiring after 15 minutes.
 - Added server-side guild/channel validation and actionable Discord posting errors.
+
+## 0.1.0-alpha.42 — Role-Gated Community Alerts
+- Added a guild-level automation that announces approved Creator Directory members when Twitch or YouTube changes from offline to live.
+- Added an eligibility-role check, destination-channel selector, optional mentionable ping role, polling interval, and editable live-message template.
+- Added per-creator/platform delivery state to prevent duplicate announcements during the same live session.
+- Uses direct member lookups for listed creators instead of enumerating the Discord member list.
+- Preserved existing individually configured Twitch, YouTube, and RSS alerts.
+
+## 0.1.0-alpha.43 — Tickets Page Guard
+- Prevented a late Tickets API response from replacing the active page after navigation.
+- Guarded category and ticket-panel refreshes against guild/page changes.
+- Prevented stale Tickets failures from replacing the active page with an error screen.
+- No migration, secret, OAuth scope, or Discord permission changes.
