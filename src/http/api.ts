@@ -24,7 +24,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/guilds') return listManageableGuilds(env, session);
   if (url.pathname === '/api/operator/bugs') return operatorBugApi(request, env, session.user_id);
 
-  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|kofi|creator|social|security|shield|creator-directory|events|applications|health|creator-safety|operations|onboarding|connections|bug-reports|start-gateway))?$/);
+  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|kofi|creator|social|security|shield|creator-directory|events|applications|health|creator-safety|operations|onboarding|connections|bug-reports|start-gateway))?$/);
   if (!match) return json({ error: 'not_found' }, 404);
   const guildId = match[1];
   const action = match[2] ?? 'config';

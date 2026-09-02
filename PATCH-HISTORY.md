@@ -61,3 +61,10 @@
 - Added a precise migration-0029 warning with the `npm run db:remote` recovery command.
 - Kept core audit events available while verbose error history is awaiting migration.
 - Continued surfacing unrelated D1 failures as real server errors.
+
+## 0.1.0-alpha.41 — Page Transition Guard + Verification Panel
+- Prevented late Community responses from replacing XP Leveling after navigation.
+- Added page-ownership guards to Community and Leveling loads, saves, refreshes, and error rendering.
+- Added a dashboard action that posts a **Verify with Orbit** button in a selected Discord channel.
+- Button clicks create private, one-use verification links bound to the clicking Discord member and expiring after 15 minutes.
+- Added server-side guild/channel validation and actionable Discord posting errors.

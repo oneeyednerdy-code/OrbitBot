@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.40
+# Start Here — Orbit v0.1.0-alpha.41
 
-Orbit alpha.40 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.41 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -37,3 +37,9 @@ npm run db:remote
 ```
 
 Applying the migration remains required to enable verbose server error history.
+
+## Alpha.41 verification channel setup
+
+Open **Verification** in the Orbit dashboard, save the Rules, Verified, and Combined roles, then choose the Discord verification channel and select **Post Verification Panel**. Do not post a permanent verification link. Each member clicks the panel button and receives a private link bound to their Discord account that expires after 15 minutes.
+
+The Discord application must keep its Interactions Endpoint URL set to `https://YOUR-ORBIT-DOMAIN/interactions`.

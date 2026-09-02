@@ -6,6 +6,7 @@ import { verifyEd25519 } from '../../security/crypto';
 import { evaluateCombinedAccess, notifyRoleChange } from './service';
 import { handleRoleInteraction } from '../roles/interactions';
 import { handleTicketInteraction } from '../tickets/interactions';
+import { createVerificationSession } from '../verification/session';
 
 export async function handleInteractions(request: Request, env: Env): Promise<Response> {
   const signature = request.headers.get('x-signature-ed25519');
@@ -32,6 +33,15 @@ export async function handleInteractions(request: Request, env: Env): Promise<Re
     }
     await evaluateCombinedAccess(env, interaction.guild_id, interaction.member.user.id);
     return json({ type: 4, data: { content: 'Rules accepted. Orbit updated your access.', flags: 64 } });
+  }
+  if (interaction.type === 3 && interaction.data?.custom_id === 'orby_verify_start') {
+    const guildId=String(interaction.guild_id||'');
+    const userId=String(interaction.member?.user?.id||'');
+    if(!/^\d+$/.test(guildId)||!/^\d+$/.test(userId))return json({type:4,data:{content:'Orbit could not identify this server member.',flags:64}});
+    const config=await env.DB.prepare('SELECT verified_role_id FROM guild_config WHERE guild_id=?').bind(guildId).first<GuildConfigRow>();
+    if(!config?.verified_role_id)return json({type:4,data:{content:'Orbit verification is not configured for this server yet.',flags:64}});
+    const url=await createVerificationSession(env,guildId,userId);
+    return json({type:4,data:{content:'Your private verification link is ready. It expires in 15 minutes and can only verify your Discord account.',flags:64,components:[{type:1,components:[{type:2,style:5,label:'Continue Verification',url}]}]}});
   }
   return json({ type: 4, data: { content: 'Unknown interaction.', flags: 64 } });
 }

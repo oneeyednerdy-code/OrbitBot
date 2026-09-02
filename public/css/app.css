@@ -176,3 +176,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .app-footer{display:flex;align-items:center;justify-content:center;gap:8px;max-width:1240px;width:100%;margin:0 auto;padding:16px 30px 78px;border-top:1px solid var(--line);color:#777485;font-size:12px}
 @media(max-width:940px){.app-footer{padding:15px 18px 78px}}
 @media(max-width:560px){.app-footer{flex-wrap:wrap;padding-left:14px;padding-right:14px}}
+
+/* alpha.41 verification setup */
+.setup-steps{margin:14px 0 18px;padding-left:22px;color:#d8d5e1;line-height:1.55}
+.setup-steps li+li{margin-top:8px}

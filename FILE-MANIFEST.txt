@@ -25,6 +25,7 @@ RELEASE-NOTES-0.1.0-alpha.37.md
 RELEASE-NOTES-0.1.0-alpha.38.md
 RELEASE-NOTES-0.1.0-alpha.39.md
 RELEASE-NOTES-0.1.0-alpha.40.md
+RELEASE-NOTES-0.1.0-alpha.41.md
 SECURITY.md
 START-HERE.md
 docs/history/CLOUDFLARE-FOUNDATION.md
@@ -154,6 +155,7 @@ src/modules/social/dispatch.ts
 src/modules/tickets/api.ts
 src/modules/tickets/interactions.ts
 src/modules/verification/route.ts
+src/modules/verification/session.ts
 src/repositories/audit.ts
 src/repositories/errors.ts
 src/router.ts

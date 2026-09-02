@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.40 — Extremely Detailed Windows Deployment Guide
+# Orbit v0.1.0-alpha.41 — Extremely Detailed Windows Deployment Guide
 
 This is the step-by-step guide for deploying the **single cumulative Orbit build**. It assumes Windows 10/11 and PowerShell. Do not deploy the older alpha ZIPs first.
 
