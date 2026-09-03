@@ -30,6 +30,10 @@ RELEASE-NOTES-0.1.0-alpha.42.md
 RELEASE-NOTES-0.1.0-alpha.43.md
 RELEASE-NOTES-0.1.0-alpha.44.md
 RELEASE-NOTES-0.1.0-alpha.45.md
+RELEASE-NOTES-0.1.0-alpha.46.md
+RELEASE-NOTES-0.1.0-alpha.47.md
+RELEASE-NOTES-0.1.0-alpha.48.md
+RELEASE-NOTES-0.1.0-alpha.49.md
 SECURITY.md
 START-HERE.md
 docs/history/CLOUDFLARE-FOUNDATION.md
@@ -76,6 +80,10 @@ migrations/0030_scheduler_role_delivery.sql
 migrations/0031_event_recurrence.sql
 migrations/0032_role_gated_community_alerts.sql
 migrations/0033_ticket_interaction_jobs.sql
+migrations/0034_ticket_resolution_reasons.sql
+migrations/0035_channel_manager.sql
+migrations/0036_security_reliability_hardening.sql
+package-lock.json
 package.json
 public/css/app.css
 public/css/verify.css
@@ -87,6 +95,7 @@ public/js/pages.js
 public/js/pages/applications.js
 public/js/pages/automation.js
 public/js/pages/bugs.js
+public/js/pages/channel-manager.js
 public/js/pages/common.js
 public/js/pages/community.js
 public/js/pages/connections.js
@@ -114,7 +123,10 @@ public/js/pages/verification.js
 src/auth/authorization.ts
 src/auth/oauth.ts
 src/auth/session.ts
+src/discord/channel-protection.ts
 src/discord/client.ts
+src/discord/guild-resources.ts
+src/discord/messages.ts
 src/discord/permissions.ts
 src/gateway/discord-gateway.ts
 src/http/api.ts
@@ -126,6 +138,8 @@ src/modules/applications/api.ts
 src/modules/automation/api.ts
 src/modules/automation/engine.ts
 src/modules/bug-reports/api.ts
+src/modules/channel-manager/api.ts
+src/modules/channel-manager/dispatch.ts
 src/modules/community-health/api.ts
 src/modules/community/api.ts
 src/modules/community/service.ts
@@ -152,6 +166,8 @@ src/modules/roles/api.ts
 src/modules/roles/interactions.ts
 src/modules/scheduler/api.ts
 src/modules/scheduler/jobs.ts
+src/modules/scheduler/recurrence.d.ts
+src/modules/scheduler/recurrence.js
 src/modules/security-center/api.ts
 src/modules/shield/api.ts
 src/modules/shield/service.ts
@@ -167,6 +183,9 @@ src/repositories/errors.ts
 src/router.ts
 src/security/crypto.ts
 src/security/headers.ts
+src/security/outbound-url.ts
 src/types.ts
+tests/recurrence.test.mjs
+tests/security-regressions.test.mjs
 tsconfig.json
 wrangler.jsonc

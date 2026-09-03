@@ -118,7 +118,7 @@ export class DiscordGateway extends DurableObject<Env> {
       return { ok: true, ...this.status() };
     }
 
-    await this.connect();
+    await this.connectGateway();
     return { ok: !this.haltReason, ...this.status() };
   }
 
@@ -194,7 +194,7 @@ export class DiscordGateway extends DurableObject<Env> {
     };
   }
 
-  private async connect(): Promise<void> {
+  private async connectGateway(): Promise<void> {
     if (this.socket && this.socket.readyState <= WebSocket.OPEN) return;
 
     const mode: ConnectionMode = this.canResume() ? 'resume' : 'identify';

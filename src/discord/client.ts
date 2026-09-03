@@ -21,16 +21,17 @@ function retryAfterMs(response: Response, body?: any): number {
 }
 
 export async function discord(env: Env, path: string, init: RequestInit = {}, userToken?: string): Promise<Response> {
-  const headers = new Headers(init.headers);
-  headers.set('authorization', userToken ? `Bearer ${userToken}` : `Bot ${env.DISCORD_BOT_TOKEN}`);
-  if (init.body) headers.set('content-type', 'application/json');
   const method = init.method || 'GET';
+  const safeInit = withSafeMessageMentions(path, method, init);
+  const headers = new Headers(safeInit.headers);
+  headers.set('authorization', userToken ? `Bearer ${userToken}` : `Bot ${env.DISCORD_BOT_TOKEN}`);
+  if (safeInit.body) headers.set('content-type', 'application/json');
   const key = routeKey(path, method);
   const blockedUntil = Math.max(globalBlockedUntil, routeBlockedUntil.get(key) || 0);
   const wait = blockedUntil - Date.now();
   if (wait > 0 && wait <= MAX_RATE_LIMIT_WAIT_MS) await delay(wait);
 
-  let response = await fetch(`${DISCORD_API}${path}`, { ...init, headers });
+  let response = await fetch(`${DISCORD_API}${path}`, { ...safeInit, headers });
   updateBucketState(response, key);
   if (response.status !== 429) return response;
 
@@ -44,9 +45,18 @@ export async function discord(env: Env, path: string, init: RequestInit = {}, us
 
   if (retryMs <= 0 || retryMs > MAX_RATE_LIMIT_WAIT_MS) return response;
   await delay(retryMs + Math.floor(Math.random() * 250));
-  response = await fetch(`${DISCORD_API}${path}`, { ...init, headers });
+  response = await fetch(`${DISCORD_API}${path}`, { ...safeInit, headers });
   updateBucketState(response, key);
   return response;
+}
+
+function withSafeMessageMentions(path:string,method:string,init:RequestInit):RequestInit{
+  if(!['POST','PATCH'].includes(method.toUpperCase())||!/\/channels\/\d+\/messages(?:\/\d+)?$/.test(path)||typeof init.body!=='string')return init;
+  try{
+    const payload=JSON.parse(init.body);
+    if(!payload||typeof payload!=='object'||Array.isArray(payload)||Object.prototype.hasOwnProperty.call(payload,'allowed_mentions'))return init;
+    return {...init,body:JSON.stringify({...payload,allowed_mentions:{parse:[]}})};
+  }catch{return init;}
 }
 
 function updateBucketState(response: Response, key: string): void {

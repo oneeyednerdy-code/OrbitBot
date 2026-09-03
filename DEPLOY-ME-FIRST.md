@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.45 — Deploy Me First
+# Orbit v0.1.0-alpha.49 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.45. Alpha.45 adds `0033_ticket_interaction_jobs.sql` for retry-safe queued ticket creation.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.49. Apply `0036_security_reliability_hardening.sql` before deploying the Worker.
 
 ## 1. Prerequisites
 
@@ -113,7 +113,7 @@ For a local test database:
 npm run db:local
 ```
 
-The complete release contains 29 ordered migrations. Do not manually skip migration files.
+The complete release contains 36 ordered migrations. Do not manually skip migration files.
 
 ## 9. Deploy
 

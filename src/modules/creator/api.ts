@@ -1,6 +1,7 @@
 import type { Env } from '../../types';
 import { json } from '../../http/responses';
 import { discord } from '../../discord/client';
+import { loadGuildResources, validateChannelIds, validateRoleIds } from '../../discord/guild-resources';
 export async function creatorApi(request:Request,env:Env,guildId:string):Promise<Response>{
  if(request.method==='GET'){
   const [rows,automation,creators,states]=await Promise.all([
@@ -14,6 +15,7 @@ export async function creatorApi(request:Request,env:Env,guildId:string):Promise
  if(request.method==='POST'){const b=await request.json<any>();
   if(b.operation==='save_role_automation')return saveRoleAutomation(env,guildId,b);
   if(!['rss','youtube','twitch'].includes(b.source_type)||!b.label||!b.source_value||!b.discord_channel_id)return json({error:'invalid_source'},400);const now=Date.now();
+  const resources=await loadGuildResources(env,guildId,{channels:true,roles:Boolean(b.mention_role_id)});if(!resources.ok)return json(resources,resources.status);const badChannel=validateChannelIds(resources,[b.discord_channel_id]);if(badChannel)return json(badChannel,badChannel.status);const badRole=validateRoleIds(resources,[b.mention_role_id].filter(Boolean),{mentionable:true});if(badRole)return json(badRole,badRole.status);
   if(b.id){await env.DB.prepare(`UPDATE creator_sources SET source_type=?,label=?,source_value=?,discord_channel_id=?,mention_role_id=?,live_message=?,offline_message=?,notify_live=?,notify_offline=?,vod_url=?,cooldown_minutes=?,enabled=?,updated_at=? WHERE id=? AND guild_id=?`).bind(b.source_type,String(b.label),String(b.source_value),String(b.discord_channel_id),b.mention_role_id||null,b.live_message||null,b.offline_message||null,b.notify_live===false?0:1,b.notify_offline?1:0,b.vod_url||null,Math.max(1,Number(b.cooldown_minutes||10)),b.enabled===false?0:1,now,Number(b.id),guildId).run();return json({ok:true});}
   const r=await env.DB.prepare(`INSERT INTO creator_sources(guild_id,source_type,label,source_value,discord_channel_id,mention_role_id,live_message,offline_message,notify_live,notify_offline,vod_url,cooldown_minutes,enabled,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)`).bind(guildId,b.source_type,String(b.label),String(b.source_value),String(b.discord_channel_id),b.mention_role_id||null,b.live_message||null,b.offline_message||null,b.notify_live===false?0:1,b.notify_offline?1:0,b.vod_url||null,Math.max(1,Number(b.cooldown_minutes||10)),now,now).run();return json({ok:true,id:Number(r.meta.last_row_id)});}
  if(request.method==='DELETE'){const id=Number(new URL(request.url).searchParams.get('id'));await env.DB.prepare('DELETE FROM creator_sources WHERE id=? AND guild_id=?').bind(id,guildId).run();return json({ok:true});}return json({error:'method_not_allowed'},405);
@@ -25,19 +27,10 @@ async function saveRoleAutomation(env:Env,guildId:string,b:any):Promise<Response
  const enabled=Boolean(b.enabled),requiredRoleId=String(b.required_role_id||''),channelId=String(b.discord_channel_id||''),mentionRoleId=String(b.mention_role_id||'');
  if(enabled&&(!requiredRoleId||!channelId))return json({error:'role_and_channel_required',detail:'Choose an eligible creator role and destination channel.'},400);
  if(String(b.live_message||'').length>2000)return json({error:'message_too_long',detail:'The alert template must be 2,000 characters or fewer.'},400);
- if(requiredRoleId||mentionRoleId){
-  const rolesResponse=await discord(env,`/guilds/${guildId}/roles`);
-  if(!rolesResponse.ok)return json({error:'discord_roles_unavailable',detail:`Discord returned HTTP ${rolesResponse.status} while validating roles.`},502);
-  const roles=await rolesResponse.json<any[]>(),required=roles.find(role=>String(role.id)===requiredRoleId&&role.name!=='@everyone');
-  if(requiredRoleId&&!required)return json({error:'eligible_role_unavailable',detail:'The selected eligible creator role no longer exists.'},400);
-  if(mentionRoleId&&!roles.some(role=>String(role.id)===mentionRoleId&&!role.managed&&role.mentionable))return json({error:'mention_role_unavailable',detail:'The ping role must exist and be marked Mentionable in Discord.'},400);
- }
- if(channelId){
-  const channelsResponse=await discord(env,`/guilds/${guildId}/channels`);
-  if(!channelsResponse.ok)return json({error:'discord_channels_unavailable',detail:`Discord returned HTTP ${channelsResponse.status} while validating the channel.`},502);
-  const channels=await channelsResponse.json<any[]>();
-  if(!channels.some(channel=>String(channel.id)===channelId&&(channel.type===0||channel.type===5)))return json({error:'destination_channel_unavailable',detail:'The selected Discord text channel no longer exists.'},400);
- }
+ const resources=await loadGuildResources(env,guildId,{channels:Boolean(channelId),roles:Boolean(requiredRoleId||mentionRoleId)});if(!resources.ok)return json(resources,resources.status);
+ const badChannel=validateChannelIds(resources,[channelId].filter(Boolean));if(badChannel)return json(badChannel,badChannel.status);
+ const badRequired=validateRoleIds(resources,[requiredRoleId].filter(Boolean));if(badRequired)return json({error:'eligible_role_unavailable',detail:'The selected eligible creator role no longer exists or belongs to another server.'},400);
+ const badMention=validateRoleIds(resources,[mentionRoleId].filter(Boolean),{mentionable:true});if(badMention)return json({error:'mention_role_unavailable',detail:'The ping role must exist in this server and be marked Mentionable in Discord.'},400);
  const now=Date.now(),interval=Math.min(60,Math.max(5,Number(b.poll_interval_minutes||5))),message=String(b.live_message||defaultAutomation().live_message);
  const previous=await env.DB.prepare('SELECT required_role_id FROM creator_role_alert_configs WHERE guild_id=?').bind(guildId).first<any>();
  await env.DB.prepare(`INSERT INTO creator_role_alert_configs(guild_id,enabled,required_role_id,discord_channel_id,mention_role_id,live_message,poll_interval_minutes,updated_by,created_at,updated_at)

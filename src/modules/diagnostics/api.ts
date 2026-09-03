@@ -7,6 +7,7 @@ const SEND_MESSAGES = 1n << 11n;
 const VIEW_CHANNEL = 1n << 10n;
 const ADMINISTRATOR = 1n << 3n;
 const CREATE_EVENTS = 1n << 44n;
+const MANAGE_CHANNELS = 1n << 4n;
 
 export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy: string) {
   const checks: any[] = [];
@@ -53,6 +54,7 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
     checks.push(check('view_channel', Boolean(perms & VIEW_CHANNEL), 'View Channels', Boolean(perms & VIEW_CHANNEL) ? 'Orbit can view server channels.' : 'Orbit is missing View Channels.'));
     checks.push(check('send_messages', Boolean(perms & SEND_MESSAGES), 'Send Messages', Boolean(perms & SEND_MESSAGES) ? 'Orbit can send messages.' : 'Orbit is missing Send Messages.'));
     checks.push(check('manage_roles', Boolean((perms & ADMINISTRATOR) || (perms & MANAGE_ROLES)), 'Manage Roles', Boolean((perms & ADMINISTRATOR) || (perms & MANAGE_ROLES)) ? 'Orbit can manage assignable roles.' : 'Orbit is missing Manage Roles.'));
+    checks.push(check('manage_channels', Boolean((perms & ADMINISTRATOR) || (perms & MANAGE_CHANNELS)), 'Manage Channels', Boolean((perms & ADMINISTRATOR) || (perms & MANAGE_CHANNELS)) ? 'Orbit can run owner-approved channel operations.' : 'Orbit is missing Manage Channels; Channel Manager remains read-only.'));
     if (enabled.has('creator_community')) checks.push(check('create_events', Boolean((perms & ADMINISTRATOR) || (perms & CREATE_EVENTS)), 'Create Events', Boolean((perms & ADMINISTRATOR) || (perms & CREATE_EVENTS)) ? 'Orbit can create Discord Scheduled Events.' : 'Orbit is missing the Create Events permission required for Discord Scheduled Events.'));
     const top = Math.max(...roles.filter(r => bot.roles?.includes(r.id)).map(r => r.position), 0);
     for (const [label,id] of [['Rules',config?.rules_role_id],['Verified',config?.verified_role_id],['Combined',config?.combined_role_id]] as const) {

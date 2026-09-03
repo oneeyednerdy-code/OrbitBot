@@ -18,8 +18,15 @@ export async function ticketsApi(request:Request,env:Env,guildId:string):Promise
 
 async function createCategory(env:Env,guildId:string,body:any):Promise<Response>{
   const name=String(body.name||'').trim();if(!name)return json({error:'name_required',detail:'Enter a ticket category name.'},400);
-  const now=Date.now(),forms=Array.isArray(body.form)?body.form.slice(0,5):[];
-  const result=await env.DB.prepare('INSERT INTO ticket_categories(guild_id,name,description,emoji,discord_category_id,staff_role_ids_json,form_json,enabled,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(guildId,name.slice(0,100),body.description||null,body.emoji||null,body.discord_category_id||null,JSON.stringify(body.staff_role_ids||[]),JSON.stringify(forms),1,Number(body.sort_order||0),now,now).run();
+  const now=Date.now(),forms=(Array.isArray(body.form)?body.form:[]).slice(0,5).map((field:any,index:number)=>({label:String(field?.label||`Question ${index+1}`).trim().slice(0,45),long:field?.long!==false,required:field?.required!==false})).filter((field:any)=>field.label),staffRoleIds=(Array.isArray(body.staff_role_ids)?body.staff_role_ids:[]).map(String).filter((id:string)=>/^\d{16,20}$/.test(id)).slice(0,50);
+  const categoryId=Number(body.id||0);
+  if(categoryId){
+    const existing=await env.DB.prepare('SELECT id FROM ticket_categories WHERE id=? AND guild_id=?').bind(categoryId,guildId).first<any>();
+    if(!existing)return json({error:'category_not_found',detail:'That ticket category no longer exists.'},404);
+    await env.DB.prepare('UPDATE ticket_categories SET name=?,description=?,emoji=?,discord_category_id=?,staff_role_ids_json=?,form_json=?,enabled=?,sort_order=?,updated_at=? WHERE id=? AND guild_id=?').bind(name.slice(0,100),String(body.description||'').slice(0,1000)||null,String(body.emoji||'').slice(0,32)||null,String(body.discord_category_id||'').trim()||null,JSON.stringify(staffRoleIds),JSON.stringify(forms),body.enabled===false?0:1,Number(body.sort_order||0),now,categoryId,guildId).run();
+    return json({ok:true,id:categoryId,updated:true,repost_panel:true});
+  }
+  const result=await env.DB.prepare('INSERT INTO ticket_categories(guild_id,name,description,emoji,discord_category_id,staff_role_ids_json,form_json,enabled,sort_order,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)').bind(guildId,name.slice(0,100),String(body.description||'').slice(0,1000)||null,String(body.emoji||'').slice(0,32)||null,String(body.discord_category_id||'').trim()||null,JSON.stringify(staffRoleIds),JSON.stringify(forms),body.enabled===false?0:1,Number(body.sort_order||0),now,now).run();
   return json({ok:true,id:Number(result.meta.last_row_id)});
 }
 

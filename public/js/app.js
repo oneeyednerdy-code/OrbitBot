@@ -29,18 +29,20 @@ async function selectGuild(guildId){
   }catch(error){state.bundle=null;if(error.message==='bot_not_in_guild')renderInstallNeeded(error.payload?.install_url||`/oauth/install?guild_id=${guildId}`);else renderGuildAuthorizationError(error);}
 }
 function enabledFeatures(){return new Set((state.bundle?.features||[]).filter(x=>Number(x.enabled)===1).map(x=>x.feature_key));}
-function pageAllowed(page){if(['overview','settings','features','onboarding','diagnostics'].includes(page))return true;if(page==='bugs')return Boolean(state.me?.operator);if(page==='connections'){const enabled=enabledFeatures();return enabled.has('alerts')||enabled.has('social')}const feature=pageFeatures[page];return !feature||enabledFeatures().has(feature);}
+function pageAllowed(page){if(page==='channel-manager')return Boolean(state.bundle?.guild?.owner);if(['overview','settings','features','onboarding','diagnostics'].includes(page))return true;if(page==='bugs')return Boolean(state.me?.operator);if(page==='connections'){const enabled=enabledFeatures();return enabled.has('alerts')||enabled.has('social')}const feature=pageFeatures[page];return !feature||enabledFeatures().has(feature);}
 function applyAdaptiveNavigation(){
   const enabled=enabledFeatures();
   document.querySelectorAll('[data-feature]').forEach(el=>{const needs=String(el.dataset.feature||'').split(/\s+/).filter(Boolean);el.classList.toggle('hidden',!needs.some(key=>enabled.has(key)))});
   document.querySelectorAll('.nav-section').forEach(section=>{let next=section.nextElementSibling,visible=false;while(next&&!next.classList.contains('nav-section')){if(next.classList.contains('nav-link')&&!next.classList.contains('hidden'))visible=true;next=next.nextElementSibling;}section.classList.toggle('hidden',!visible)});
   const bug=$('[data-page="bugs"]');if(bug)bug.classList.toggle('hidden',!state.me?.operator);
+  const manager=$('[data-page="channel-manager"]');if(manager)manager.classList.toggle('hidden',!state.bundle?.guild?.owner);
 }
 function wireNavigation(){
-  document.addEventListener('click',event=>{const link=event.target.closest('[data-page]');if(!link)return;event.preventDefault();const page=link.dataset.page;if(!pageAllowed(page))return;state.page=page;history.replaceState(null,'',`#${state.page}`);setActiveNav();renderPage();$('#sidebar').classList.remove('open');});
+  document.addEventListener('click',event=>{const link=event.target.closest('[data-page]');if(!link)return;event.preventDefault();const page=link.dataset.page;if(!pageAllowed(page)||page===state.page)return;state.page=page;history.replaceState(null,'',`#${state.page}`);setActiveNav();showPageTransition(page);$('#sidebar').classList.remove('open');requestAnimationFrame(()=>requestAnimationFrame(()=>{if(state.page===page)renderPage()}));});
   $('#menu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
   window.addEventListener('orbit-features-changed',()=>{applyAdaptiveNavigation();setActiveNav()});
   const hash=location.hash.slice(1);if(hash)state.page=hash;setActiveNav();
 }
 function setActiveNav(){document.querySelectorAll('[data-page]').forEach(link=>link.classList.toggle('active',link.dataset.page===state.page))}
+function showPageTransition(page){const label=page.split('-').map(part=>part.charAt(0).toUpperCase()+part.slice(1)).join(' ');$('#content').innerHTML=`<div class="page-transition" role="status" aria-live="polite"><span class="orbit-loader" aria-hidden="true"></span><strong>Loading ${escapeHtml(label)}…</strong><span class="loading-line"></span><span class="loading-line short"></span></div>`}
 boot();

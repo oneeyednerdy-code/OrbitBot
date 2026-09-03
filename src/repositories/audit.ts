@@ -4,7 +4,8 @@ export async function audit(env: Env, guildId: string, userId: string | null, ac
   try {
     await env.DB.prepare('INSERT INTO audit_events(guild_id,user_id,actor_user_id,action,details,created_at) VALUES(?,?,?,?,?,?)')
       .bind(guildId, userId, actorUserId, action, JSON.stringify(details ?? {}), Date.now()).run();
-  } catch {
-    // Audit failure must never break the primary moderation/access action.
+  } catch (error) {
+    // Audit failure must never break the primary action, but it must remain observable.
+    console.error('orbit audit write failed',{guildId,action,error:String(error).slice(0,300)});
   }
 }

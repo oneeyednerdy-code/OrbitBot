@@ -26,6 +26,7 @@ import { renderOperations } from './pages/operations.js';
 import { renderOnboarding } from './pages/onboarding.js';
 import { renderConnections } from './pages/connections.js';
 import { renderBugs } from './pages/bugs.js';
+import { renderChannelManager } from './pages/channel-manager.js';
 
 export { renderLoading, renderError, renderNoServers, renderInstallNeeded, renderGuildAuthorizationError };
 
@@ -56,6 +57,7 @@ export function renderPage(){
     case 'features': return renderOnboarding(true);
     case 'connections': return renderConnections();
     case 'bugs': return renderBugs();
+    case 'channel-manager': return renderChannelManager();
     case 'diagnostics': return renderDiagnostics();
     case 'logs': return renderLogs();
     case 'settings': return renderSettings();

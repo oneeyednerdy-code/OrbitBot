@@ -1,6 +1,7 @@
 import type { Env } from '../../types';
 import { discord } from '../../discord/client';
 import { audit } from '../../repositories/audit';
+import { sendDiscordMessage } from '../../discord/messages';
 
 export async function recordMessageAndCheckHoneypot(env: Env, event: any): Promise<void> {
   if (!event.guild_id || !event.channel_id || !event.id || !event.author?.id || event.author?.bot) return;
@@ -35,5 +36,5 @@ export async function recordMessageAndCheckHoneypot(env: Env, event: any): Promi
   const ban = await discord(env, `/guilds/${event.guild_id}/bans/${event.author.id}`, {method:'PUT',body:JSON.stringify({delete_message_seconds:0})});
   await env.DB.prepare('INSERT INTO moderation_cases(guild_id,target_user_id,actor_user_id,action,reason,metadata_json,created_at) VALUES(?,?,?,?,?,?,?)').bind(event.guild_id,event.author.id,null,ban.ok?'honeypot_ban':'honeypot_ban_failed','Posted in honeypot',JSON.stringify({channel_id:event.channel_id,deleted_messages:deleted,status:ban.status}),now).run();
   await audit(env,event.guild_id,event.author.id,ban.ok?'honeypot_ban':'honeypot_ban_failed',{channel_id:event.channel_id,deleted_messages:deleted,status:ban.status});
-  if (config.log_channel_id) await discord(env,`/channels/${config.log_channel_id}/messages`,{method:'POST',body:JSON.stringify({content:`🍯 Honeypot triggered for <@${event.author.id}>. ${ban.ok?'Banned':'Ban failed'}; removed ${deleted} recent message(s).`})});
+  if (config.log_channel_id) await sendDiscordMessage(env,String(config.log_channel_id),{content:`🍯 Honeypot triggered for <@${event.author.id}>. ${ban.ok?'Banned':'Ban failed'}; removed ${deleted} recent message(s).`});
 }

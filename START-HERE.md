@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.45
+# Start Here — Orbit v0.1.0-alpha.49
 
-Orbit alpha.45 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.49 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -65,3 +65,25 @@ Alpha.44 adds no migration, secret, OAuth scope, or Discord permission.
 Run `npm run db:remote` before deployment to apply `0033_ticket_interaction_jobs.sql`. Open **Tickets**, create at least one category, then choose either **Direct ticket button** or **Category dropdown** when posting the panel. Direct mode opens the selected category immediately or presents its questions first.
 
 Ticket channel creation uses the existing `JOBS` queue binding so Discord receives an immediate interaction acknowledgement. No new secret, OAuth scope, or Discord permission is required.
+
+## Alpha.46 ticket resolution and category editing
+
+Run `npm run db:remote` before deployment to apply `0034_ticket_resolution_reasons.sql`. Ticket opening messages now include **Close Ticket** and **Delete Ticket (Staff)**. Both actions require a reason. Close locks the opener from replying but keeps the channel and history; Delete requires configured ticket staff, Manage Channels, or Administrator and removes the Discord channel while preserving the reason in Orbit.
+
+Existing categories can be loaded into the Tickets editor and updated in place, including their name, description, emoji, order, parent, enabled state, staff roles, and questions. Repost category-dropdown panels after editing visible category details because Discord does not automatically rewrite an already-posted menu. Updated questions apply automatically because the category ID stays the same.
+
+## Alpha.47 owner-only Channel Manager
+
+Run `npm run db:remote` to apply the migrations through `0036_security_reliability_hardening.sql`, then deploy. Only the Discord server owner sees and can call Channel Manager. Use it to bulk-create categories/channels, preview dependency-aware bulk deletions, create named structural backups, and queue restores.
+
+Deleting a Discord channel permanently deletes its messages, threads, attachments and webhooks. Orbit snapshots structure before every operation, but those backups cannot restore content or original Discord channel IDs. Move or disable every blocked Orbit dependency before deletion, review the expanded target list, and type the exact confirmation phrase.
+
+## Alpha.48 hierarchy ordering and safer sends
+
+Channel Manager now supports dragging existing categories and channels into order, moving channels between categories, and arranging Bulk Create previews. Use the arrow controls when dragging is unavailable. Every Discord-changing action requires both the exact confirmation phrase and its acknowledgement checkbox, and only one Channel Manager job may run per server at a time.
+
+Dashboard navigation paints a loading animation immediately. Scheduled Posts also displays progress and locks its button before starting the network request.
+
+## Alpha.49 security and reliability hardening
+
+Apply `0036_security_reliability_hardening.sql` before deploying. Alpha.49 validates every high-risk channel and role ID against the managed Discord server, defaults regular Discord sends to no mention parsing, gives queued work recoverable leases, retains failed protection snapshots, refreshes Discord dashboard sessions, and preserves scheduled local time across DST.

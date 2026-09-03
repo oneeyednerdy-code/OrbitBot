@@ -56,7 +56,9 @@ export async function oauthCallback(request: Request, env: Env): Promise<Respons
   const id = randomToken();
   const csrf = randomToken();
   const encryptedToken = await seal(token.access_token, env.SESSION_SECRET);
-  await env.DB.prepare('INSERT INTO sessions(id,user_id,username,avatar,access_token,csrf_token,expires_at,created_at) VALUES(?,?,?,?,?,?,?,?)')
-    .bind(id, user.id, user.username, user.avatar, encryptedToken, csrf, Date.now() + token.expires_in * 1000, Date.now()).run();
-  return redirect('/', { 'set-cookie': `orby_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${Math.min(token.expires_in, 604800)}` });
+  const encryptedRefreshToken=token.refresh_token?await seal(token.refresh_token,env.SESSION_SECRET):null;
+  const now=Date.now(),sessionExpiresAt=now+30*24*60*60_000;
+  await env.DB.prepare('INSERT INTO sessions(id,user_id,username,avatar,access_token,refresh_token,oauth_scope,token_type,csrf_token,expires_at,session_expires_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?)')
+    .bind(id,user.id,user.username,user.avatar,encryptedToken,encryptedRefreshToken,String(token.scope||''),String(token.token_type||'Bearer'),csrf,now+Number(token.expires_in||0)*1000,sessionExpiresAt,now).run();
+  return redirect('/', { 'set-cookie': `orby_session=${id}; HttpOnly; Secure; SameSite=Lax; Path=/; Max-Age=${30*24*60*60}` });
 }

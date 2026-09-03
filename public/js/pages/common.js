@@ -3,7 +3,7 @@ import { $, api, escapeHtml, state, title, usableRoles } from '../core.js';
 export function renderLoading(){$('#content').innerHTML='<div class="eyebrow">ORBIT</div><h1 class="page-title">Loading server</h1><div class="grid"><div class="skeleton span-4"></div><div class="skeleton span-4"></div><div class="skeleton span-4"></div></div>'}
 
 
-export function renderError(message){$('#content').innerHTML=`<div class="eyebrow">SYSTEM</div><h1 class="page-title">Orbit needs attention</h1><div class="notice error">${message}</div>`}
+export function renderError(message){if(String(message).includes('stale_navigation'))return;$('#content').innerHTML=`<div class="eyebrow">SYSTEM</div><h1 class="page-title">Orbit needs attention</h1><div class="notice error">${message}</div>`}
 
 
 export function renderNoServers(){$('#content').innerHTML='<div class="eyebrow">WELCOME</div><h1 class="page-title">Add your first server</h1><div class="empty"><h2>No manageable servers found</h2><p>Install Orbit on a Discord server where you are the owner or have Manage Server permission, then refresh the dashboard.</p><a class="btn" href="/oauth/install">Add Orbit to Discord</a></div>'}

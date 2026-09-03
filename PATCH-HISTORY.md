@@ -97,3 +97,40 @@
 - Added idempotent interaction tracking so queue retries cannot create duplicate tickets.
 - Explicitly grants Orbit access to each private ticket channel after denying `@everyone`.
 - Displays form responses in a bounded Discord embed and reports opening-message failures without hiding the created ticket.
+
+## 0.1.0-alpha.46 — Ticket Resolution + Category Editing
+- Added required-reason Discord modals for closing and deleting tickets.
+- Close keeps the ticket channel and history while removing the opener's ability to send messages.
+- Delete is restricted to configured ticket staff, Manage Channels, or Administrator and removes the Discord channel.
+- Preserved close/delete reasons, timestamps, and acting users in Orbit's ticket records and audit history.
+- Added in-place editing for ticket category details, staff roles, enabled state, ordering, parent category, and form questions.
+- Added a dashboard reminder to repost ticket panels after category changes so Discord's existing message is not mistaken for the updated configuration.
+
+## 0.1.0-alpha.47 — Owner-Only Channel Manager
+
+- Added an owner-only bulk channel/category manager with API-level ownership checks.
+- Added dependency-aware delete previews, optional category cascade, exact confirmations and required audit reasons.
+- Added queued per-item create/delete/restore jobs and structural backups.
+- Added migration `0035_channel_manager.sql`.
+
+## 0.1.0-alpha.48 — Drag-and-Drop Hierarchy + Safer Sends
+
+- Added visual ordering for existing categories/channels and Bulk Create plans.
+- Added cross-category channel moves plus arrow-button ordering fallback.
+- Added preview fingerprints, exact phrases, acknowledgement checkboxes, duplicate-operation protection, and immediate button locks.
+- Added first-frame dashboard loading animation and visible Scheduled Posts progress.
+- Normalized standard dashboard checkboxes to a compact 16px size.
+- No new migration, secret, scope, or permission.
+
+## 0.1.0-alpha.49 — Security & Reliability Hardening
+
+- Fixed the connection OAuth authorization truthiness bypass and reused the loaded session in guild authorization.
+- Added central same-guild channel/role validation for high-risk dashboard mutations.
+- Added safe Discord mention defaults with explicit role/user allowlists.
+- Added scheduler, social publisher, and Channel Manager leases plus stale-work recovery.
+- Added per-channel protection outcomes and retained failed restore snapshots.
+- Added encrypted Discord OAuth refresh-token sessions.
+- Added DST-aware scheduler recurrence and a four-test regression suite.
+- Added atomic Ko-fi total increments and conditional XP cooldown awards.
+- Added outbound public-HTTPS checks, log retention, stronger log redaction, and a reproducible dependency lockfile.
+- Added migration `0036_security_reliability_hardening.sql`.

@@ -5,6 +5,7 @@ import { json, redirect } from '../../http/responses';
 import { randomToken, seal, sha256, openSeal } from '../../security/crypto';
 import { upsertSocialIntegration } from './api';
 import { recordSystemError } from '../../repositories/errors';
+import { publicHttpsUrl } from '../../security/outbound-url';
 
 const validPlatforms = new Set(['twitch','youtube','threads','mastodon']);
 
@@ -15,8 +16,8 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
   const requestUrl = new URL(request.url);
   const guildId = requestUrl.searchParams.get('guild_id');
   if (!guildId || !/^\d+$/.test(guildId)) return json({ error: 'guild_required' }, 400);
-  const authz = await managedGuild(request, env, guildId);
-  if (!authz) return json({ error: 'forbidden' }, 403);
+  const authz = await managedGuild(request, env, guildId, session);
+  if (!authz.ok) return json({ error: authz.error, detail: authz.detail, retry_after: authz.retry_after }, authz.status);
   if (!env.SOCIAL_CREDENTIAL_KEY) return json({ error: 'social_credential_key_missing' }, 503);
 
   const state = randomToken();
@@ -67,6 +68,7 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
   const redirectUri = `${env.APP_ORIGIN}/connections/mastodon/callback`;
   const registration = await fetch(`${instance}/api/v1/apps`, {
     method: 'POST',
+    redirect: 'error',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ client_name: 'Nerdspace Orbit', redirect_uris: redirectUri, scopes: 'read:accounts write:statuses', website: env.APP_ORIGIN }),
   });
@@ -97,8 +99,8 @@ export async function connectionOauthCallback(request: Request, env: Env, platfo
   const row = await env.DB.prepare(`SELECT state_hash,guild_id,user_id,platform,context_json FROM connection_oauth_states
     WHERE state_hash=? AND expires_at>?`).bind(stateHash, Date.now()).first<any>();
   if (!row || row.user_id !== session.user_id || row.platform !== platform) return json({ error: 'invalid_oauth_state' }, 400);
-  const authz = await managedGuild(request, env, row.guild_id);
-  if (!authz) return json({ error: 'forbidden' }, 403);
+  const authz = await managedGuild(request, env, row.guild_id, session);
+  if (!authz.ok) return json({ error: authz.error, detail: authz.detail, retry_after: authz.retry_after }, authz.status);
   await env.DB.prepare('DELETE FROM connection_oauth_states WHERE state_hash=?').bind(stateHash).run();
   if (!env.SOCIAL_CREDENTIAL_KEY) return json({ error: 'social_credential_key_missing' }, 503);
 
@@ -186,13 +188,14 @@ async function exchangeMastodon(code: string, contextCipher: string | null, env:
   const redirectUri = `${env.APP_ORIGIN}/connections/mastodon/callback`;
   const response = await fetch(`${instance}/oauth/token`, {
     method: 'POST',
+    redirect: 'error',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'authorization_code', code, client_id: context.client_id, client_secret: context.client_secret, redirect_uri: redirectUri, scope: 'read:accounts write:statuses' }),
   });
   if (!response.ok) throw new Error(`mastodon_exchange_failed_${response.status}`);
   const token = await response.json<any>();
   if (!token?.access_token) throw new Error('mastodon_token_missing');
-  const me = await fetch(`${instance}/api/v1/accounts/verify_credentials`, { headers: { authorization: `Bearer ${token.access_token}` } });
+  const me = await fetch(`${instance}/api/v1/accounts/verify_credentials`, { headers: { authorization: `Bearer ${token.access_token}` },redirect:'error' });
   if (!me.ok) throw new Error(`mastodon_profile_failed_${me.status}`);
   const account = await me.json<any>();
   if (!account?.id) throw new Error('mastodon_user_missing');
@@ -205,8 +208,8 @@ function normalizeInstance(value: any): string | null {
     let raw = String(value || '').trim();
     if (!raw) return null;
     if (!/^https?:\/\//i.test(raw)) raw = `https://${raw}`;
-    const url = new URL(raw);
-    if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return null;
+    const url = publicHttpsUrl(raw);
+    if (!url) return null;
     return `${url.protocol}//${url.host}`;
   } catch { return null; }
 }

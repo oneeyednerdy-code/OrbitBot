@@ -29,7 +29,10 @@ import { operationsApi } from '../operations/api';
 import { onboardingApi } from '../onboarding/api';
 import { connectionsApi } from '../connections/api';
 import { bugReportsApi } from '../bug-reports/api';
+import { channelManagerApi } from '../channel-manager/api';
 import { createVerificationSession } from '../verification/session';
+import { loadGuildResources, validateChannelIds } from '../../discord/guild-resources';
+import { sendDiscordMessage } from '../../discord/messages';
 
 export async function listManageableGuilds(env: Env, session: SessionRow): Promise<Response> {
   let token: string;
@@ -51,7 +54,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'overview' && request.method === 'GET') return guildOverview(env, guildId);
   if (action === 'config' && request.method === 'GET') return json((await env.DB.prepare('SELECT * FROM guild_config WHERE guild_id=?').bind(guildId).first()) ?? {});
   if (action === 'config' && request.method === 'POST') return saveAccessConfig(request, env, guildId, guild.name, session.user_id);
-  if (action === 'post-rules' && request.method === 'POST') return postRules(request, env);
+  if (action === 'post-rules' && request.method === 'POST') return postRules(request, env, guildId);
   if (action === 'create-verification' && request.method === 'POST') return createVerification(request, env, guildId);
   if (action === 'post-verification' && request.method === 'POST') return postVerification(request, env, guildId, session.user_id);
   if (action === 'diagnostics' && request.method === 'GET') return diagnosticsApi(env, guildId, session.user_id, false);
@@ -78,6 +81,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'onboarding') return onboardingApi(request, env, guildId, session.user_id);
   if (action === 'connections') return connectionsApi(request, env, guildId, session.user_id);
   if (action === 'bug-reports') return bugReportsApi(request, env, guildId, session.user_id);
+  if (action === 'channel-manager') return channelManagerApi(request, env, guildId, session.user_id, guild);
   if (action === 'start-gateway' && request.method === 'POST') { const id=env.GATEWAY.idFromName('discord'); const response=await env.GATEWAY.get(id).fetch('https://gateway/start',{method:'POST'}); const data=await response.json<any>(); return json(data,response.status); }
   return json({ error: 'bad_request' }, 400);
 }
@@ -145,12 +149,13 @@ async function saveAccessConfig(request: Request, env: Env, guildId: string, gui
   return json({ ok: true, config: { ...body, guild_id: guildId, guild_name: guildName, updated_by: userId, updated_at: updatedAt } });
 }
 
-async function postRules(request: Request, env: Env): Promise<Response> {
+async function postRules(request: Request, env: Env, guildId: string): Promise<Response> {
   const body = (await request.json()) as any;
-  const response = await discord(env, `/channels/${body.channel_id}/messages`, {
-    method: 'POST',
-    body: JSON.stringify({ content: body.message || 'Please read the server rules, then agree below to continue.', components: [{ type: 1, components: [{ type: 2, style: 3, label: 'I Agree to the Rules', custom_id: 'orby_rules_agree' }] }] }),
-  });
+  const resources=await loadGuildResources(env,guildId,{channels:true});
+  if(!resources.ok)return json(resources,resources.status);
+  const invalid=validateChannelIds(resources,[body.channel_id]);
+  if(invalid)return json(invalid,invalid.status);
+  const response = await sendDiscordMessage(env,String(body.channel_id),{content:String(body.message||'Please read the server rules, then agree below to continue.').slice(0,2000),components:[{type:1,components:[{type:2,style:3,label:'I Agree to the Rules',custom_id:'orby_rules_agree'}]}]});
   return json({ ok: response.ok }, response.ok ? 200 : 400);
 }
 
@@ -172,7 +177,7 @@ async function postVerification(request:Request,env:Env,guildId:string,actorId:s
   if(String(channel.guild_id)!==guildId||![0,5].includes(Number(channel.type)))return json({error:'invalid_channel',detail:'Select a text or announcement channel from this server.'},400);
   const requestedMessage=String(body.message||'').trim();
   const content=(requestedMessage||'Complete human verification below to unlock server access.').slice(0,2000);
-  const sent=await discord(env,`/channels/${channelId}/messages`,{method:'POST',body:JSON.stringify({content,components:[{type:1,components:[{type:2,style:1,label:'Verify with Orbit',custom_id:'orby_verify_start'}]}]})});
+  const sent=await sendDiscordMessage(env,channelId,{content,components:[{type:1,components:[{type:2,style:1,label:'Verify with Orbit',custom_id:'orby_verify_start'}]}]});
   if(!sent.ok){let detail=`Discord returned HTTP ${sent.status}.`;try{const error=await sent.clone().json<any>();detail=error?.message||detail}catch{}return json({error:'verification_panel_failed',detail},sent.status===403?403:502)}
   const message=await sent.json<any>();
   await audit(env,guildId,null,'verification_panel_posted',{channel_id:channelId,message_id:message.id},actorId);

@@ -16,6 +16,9 @@ export async function api(url,options={}){
   if((init.method||'GET')!=='GET'&&state.csrf)init.headers.set('x-orby-csrf',state.csrf);
   const endpoint=new URL(url,location.origin).pathname;
   const method=init.method||'GET';
+  const pageScoped=method==='GET'&&endpoint.startsWith('/api/guilds/')&&!endpoint.endsWith('/bootstrap')&&!endpoint.endsWith('/diagnostics');
+  const requestPage=pageScoped?state.page:null;
+  const requestGuild=pageScoped?state.guildId:null;
   const started=performance.now();
   let response;
   try{response=await fetch(url,init)}catch(error){
@@ -26,6 +29,7 @@ export async function api(url,options={}){
   }
   let body={};let raw='';
   try{raw=await response.text();body=raw?JSON.parse(raw):{}}catch{body=raw?{raw:clean(raw)}:{}};
+  if(pageScoped&&(requestPage!==state.page||requestGuild!==state.guildId)){const stale=new Error('stale_navigation');stale.name='AbortError';throw stale;}
   const requestId=response.headers.get('x-orbit-request-id')||body?.request_id||null;
   const record={endpoint,method,status:response.status,ok:response.ok,duration_ms:Math.round(performance.now()-started),request_id:requestId,response:response.ok?undefined:cleanPayload(body),time:Date.now()};
   clientDiagnostics.requests.push(record);clientDiagnostics.requests=clientDiagnostics.requests.slice(-100);

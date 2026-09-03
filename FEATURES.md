@@ -28,7 +28,8 @@
 - Auto-role
 - Custom commands
 - Sticky messages
-- Category-driven support tickets
+- Editable category-driven support tickets with staff roles and Discord modal questions
+- Reason-required close (retain + lock) and staff-only delete workflows
 - Ticket claiming/routing/transcript foundation
 - Applications & Appeals forms/review workflow
 - Community Health scan

@@ -1,11 +1,15 @@
 import type { Env } from '../types';
 
 const SECRET_KEY = /(token|secret|password|cookie|authorization|credential|code_verifier|client_secret)/i;
+const redactString=(value:string)=>value
+  .replace(/Bearer\s+[A-Za-z0-9._~+\/-]+/gi,'Bearer [REDACTED]')
+  .replace(/([?&](?:access_token|refresh_token|token|code|client_secret)=)[^&\s]+/gi,'$1[REDACTED]')
+  .replace(/("(?:access_token|refresh_token|token|secret|password|cookie|authorization|credential|client_secret|code_verifier)"\s*:\s*")[^"]+/gi,'$1[REDACTED]');
 
 function safe(value: any, depth = 0): any {
   if (depth > 4) return '[TRUNCATED]';
   if (value == null || typeof value === 'number' || typeof value === 'boolean') return value;
-  if (typeof value === 'string') return value.slice(0, 1200);
+  if (typeof value === 'string') return redactString(value).slice(0, 1200);
   if (Array.isArray(value)) return value.slice(0, 20).map(v => safe(v, depth + 1));
   if (typeof value === 'object') {
     const out: Record<string, any> = {};

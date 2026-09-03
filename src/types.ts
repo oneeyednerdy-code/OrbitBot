@@ -29,7 +29,9 @@ export type OrbitJob =
   | { type: 'scheduled-post-dispatch'; scheduledPostId: number }
   | { type: 'diagnostic-sweep'; guildId: string }
   | { type: 'social-dispatch'; socialPostId: number }
-  | { type: 'ticket-open-dispatch'; guildId: string; userId: string; categoryId: number; answers: Record<string,string>; interactionId: string; interactionToken: string; username: string };
+  | { type: 'channel-manager-execute'; jobId: number }
+  | { type: 'ticket-open-dispatch'; guildId: string; userId: string; categoryId: number; answers: Record<string,string>; interactionId: string; interactionToken: string; username: string }
+  | { type: 'ticket-action-dispatch'; guildId: string; ticketId: number; action: 'close' | 'delete'; reason: string; actorId: string; actorRoleIds: string[]; actorPermissions: string; channelId: string; interactionId: string; interactionToken: string };
 
 export interface SessionRow {
   id: string;
@@ -37,8 +39,12 @@ export interface SessionRow {
   username: string;
   avatar: string | null;
   access_token: string;
+  refresh_token: string | null;
+  oauth_scope: string | null;
+  token_type: string | null;
   csrf_token: string;
   expires_at: number;
+  session_expires_at: number | null;
   created_at: number;
 }
 

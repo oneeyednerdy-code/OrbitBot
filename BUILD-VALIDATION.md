@@ -1,12 +1,14 @@
-# Orbit v0.1.0-alpha.45 — Build Validation
+# Orbit v0.1.0-alpha.49 — Build Validation
 
-Validated on 2026-09-02.
+Validated on 2026-09-03.
 
 ## Passed
 
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
-- TypeScript syntax: every file in `src/` transpiles with TypeScript 5.8.3.
-- D1 migration chain: all 33 migrations apply cleanly to an empty SQLite database and create 59 application tables.
+- TypeScript strict check: `tsc --noEmit` passes with TypeScript 5.9.3.
+- Worker bundle: the complete Worker bundles successfully with esbuild.
+- Unit tests: eight regression tests pass across scheduler recurrence, OAuth authorization, guild-resource middleware, safe mentions, and retained restore snapshots.
+- D1 migration chain: all 36 migrations apply cleanly to an empty SQLite database and create 62 application tables.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
   - Gateway RESUME support,
@@ -19,7 +21,29 @@ Validated on 2026-09-02.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.45`.
+- Login page and dashboard footer both display `v0.1.0-alpha.49`.
+- Connection OAuth rejects every non-`ok` guild authorization result.
+- Guild mutations centrally validate submitted channel and role IDs against the managed server.
+- Discord message sends default to `allowed_mentions.parse=[]` unless a bounded explicit allowlist is supplied.
+- Scheduled and social posts use expiring dispatch leases; Channel Manager jobs use leases, heartbeats, and uncertain-retry protection.
+- Protection restores delete only successfully restored snapshots and retain failures with request references.
+- Discord dashboard access tokens refresh from encrypted refresh tokens within a 30-day session lifetime.
+- Scheduled recurrence advances from the prior scheduled time in the configured timezone rather than completion time.
+- Stale page responses are cancelled before old renderers can replace nodes after navigation.
+- Ko-fi totals increment atomically and require a transaction id; XP cooldown awards use a conditional atomic UPSERT.
+- RSS and Mastodon user-supplied destinations require public HTTPS URLs and do not follow redirects.
+- Existing categories and channels can be reordered with drag-and-drop; channels can move between categories or become uncategorized.
+- Bulk Create previews support ordering new categories and moving new channels among new/existing categories before validation.
+- Arrow controls provide a keyboard and mobile-friendly within-group ordering fallback.
+- Reorder previews require a current-layout fingerprint, exact phrase, acknowledgement, owner authorization, Manage Channels, and an automatic backup.
+- Channel Manager accepts only one queued/running operation per server and immediately locks action buttons against double submission.
+- Dashboard navigation paints an animated transition before loading page data, with reduced-motion support.
+- Scheduled Posts paints immediate progress before its create/action API request and restores an actionable state on failure.
+- Standard checkboxes render at a consistent 16px without changing custom feature-selection controls.
+- Channel Manager is hidden from non-owners and independently rejects non-owner API calls.
+- Delete previews expand optional category cascades, block active Orbit/Discord dependencies, require a reason and exact confirmation, and are revalidated before queueing.
+- Create, delete and structural restore operations run through the existing queue with per-item outcomes and Discord audit-log reasons.
+- Automatic and named backups explicitly exclude messages, threads, attachments and webhooks; restored channels receive new Discord IDs.
 - Diagnostics and Logs return usable responses when `orbit_error_log` is absent and name migration `0029_social_auth_verbose_errors.sql` as the required recovery.
 - Unexpected D1 failures other than the specifically detected missing table continue to propagate as server errors.
 - Community and Leveling renderers verify page ownership after asynchronous requests and before refresh/error rendering.
@@ -36,13 +60,19 @@ Validated on 2026-09-02.
 - Ticket clicks acknowledge Discord immediately, enqueue channel creation, and update the private interaction response when processing finishes.
 - Migration `0033_ticket_interaction_jobs.sql` adds a unique interaction id for retry-safe ticket creation.
 - Private ticket channels explicitly grant Orbit, the opener, and configured staff access after denying `@everyone`.
+- Ticket Close and Delete actions require a Discord modal reason and use the existing job queue for deferred processing.
+- Ticket forms and resolution prompts use Discord's current Label-wrapped text-input structure while accepting nested modal submit values.
+- Close preserves the channel/history while denying the opener Send Messages; Delete is restricted to configured ticket staff, Manage Channels, or Administrator.
+- Migration `0034_ticket_resolution_reasons.sql` preserves close/delete timestamps, actors, and reasons in Orbit records.
+- Existing ticket categories can be edited in place with guild-scoped server validation, and the dashboard prompts administrators to repost changed panels.
 
-## Environment limitation
+## Deployment-machine checks
 
-`npm install` timed out in the sandbox, so the exact project-pinned `@cloudflare/workers-types` package could not be installed here. Run the normal deployment-machine checks before production:
+The release includes a dependency lockfile. Re-run the normal checks before production:
 
 ```bash
-npm install
+npm ci
+npm test
 npm run typecheck
 ```
 
