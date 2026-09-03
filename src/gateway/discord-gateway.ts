@@ -383,7 +383,10 @@ export class DiscordGateway extends DurableObject<Env> {
         });
       }
       if (packet.t === 'GUILD_MEMBER_ADD') {
-        await shieldMemberJoin(this.env, packet.d);
+        try { await shieldMemberJoin(this.env, packet.d); }
+        catch (error) {
+          await recordSystemError(this.env, packet.d?.guild_id || null, '/gateway/dispatch/shield-member-join', 'EVENT', 500, 'shield_member_join_failed', { message: error instanceof Error ? error.message : String(error) });
+        }
         await handleMemberAdd(this.env, packet.d);
       }
       if (packet.t === 'GUILD_MEMBER_REMOVE') await handleMemberRemove(this.env, packet.d);

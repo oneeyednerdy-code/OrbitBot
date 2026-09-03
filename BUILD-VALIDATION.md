@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.50 — Build Validation
+# Orbit v0.1.0-alpha.51 — Build Validation
 
 Validated on 2026-09-03.
 
@@ -7,7 +7,7 @@ Validated on 2026-09-03.
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
 - TypeScript strict check: `tsc --noEmit` passes with TypeScript 5.9.3.
 - Worker bundle: the complete Worker bundles successfully with esbuild.
-- Unit tests: eleven regression tests pass across scheduler recurrence, OAuth authorization, guild-resource middleware, safe mentions, retained restore snapshots, Gateway recovery authorization, diagnostics grouping, and Channel Manager category recovery.
+- Unit tests: fourteen regression tests pass across scheduler recurrence, OAuth authorization, guild-resource middleware, safe mentions, retained restore snapshots, Gateway recovery authorization, diagnostics grouping, Channel Manager category recovery, Level reward editing, Role Panel editing, and welcome delivery.
 - D1 migration chain: all 36 migrations apply cleanly to an empty SQLite database and create 62 application tables.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
@@ -21,7 +21,11 @@ Validated on 2026-09-03.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.50`.
+- Login page and dashboard footer both display `v0.1.0-alpha.51`.
+- Leveling lists every configured role reward and updates rewards through guild-scoped, duplicate-protected mutations.
+- Role Panel edits update the original Discord message and existing database row; a missing message is safely reposted in the same channel.
+- Community welcome messages include a delivery test, bounded member mention allowlist, sanitized Discord failure logs, and isolation from Shield join failures.
+- A dedicated Diagnostics navigation link exposes the existing full-page diagnostics renderer.
 - Gateway force retry is restricted to the Discord server owner, requires an acknowledgement and the exact phrase `RETRY GATEWAY`, retains the five-minute cooldown, and creates an audit event.
 - The dashboard explains the required Server Members and Message Content privileged intents when Discord halts the Gateway with `disallowed_intents`.
 - Core health scoring excludes optional social integrations while leaving those checks visible in a separate section.

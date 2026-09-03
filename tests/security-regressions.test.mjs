@@ -49,3 +49,33 @@ test('Channel Manager offers an explicit missing-category recovery',async()=>{
   assert.match(api,/unresolved_categories/);
   assert.match(ui,/Add missing categories to this plan/);
 });
+
+test('Level rewards are listed and updated only inside the managed guild',async()=>{
+  const api=await readFile(new URL('../src/modules/leveling/api.ts',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../public/js/pages/leveling.js',import.meta.url),'utf8');
+  assert.match(api,/update_reward/);
+  assert.match(api,/WHERE id=\? AND guild_id=\?/);
+  assert.match(api,/level_reward_updated/);
+  assert.match(ui,/Current role rewards/);
+  assert.match(ui,/Edit reward/);
+});
+
+test('Role panel edits update the original Discord message and repair a missing one',async()=>{
+  const api=await readFile(new URL('../src/modules/roles/api.ts',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../public/js/pages/roles.js',import.meta.url),'utf8');
+  assert.match(api,/operation==='update_panel'/);
+  assert.match(api,/method:'PATCH'/);
+  assert.match(api,/discordResponse\?\.status===404/);
+  assert.match(api,/WHERE id=\? AND guild_id=\?/);
+  assert.match(ui,/Save Panel Changes/);
+});
+
+test('Welcome messages can be tested and log Discord delivery failures',async()=>{
+  const api=await readFile(new URL('../src/modules/community/api.ts',import.meta.url),'utf8');
+  const service=await readFile(new URL('../src/modules/community/service.ts',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../public/js/pages/community.js',import.meta.url),'utf8');
+  assert.match(api,/test_welcome/);
+  assert.match(service,/pingUserIds:\[String\(userId\)\]/);
+  assert.match(service,/welcome_message_failed/);
+  assert.match(ui,/Send Test Welcome/);
+});

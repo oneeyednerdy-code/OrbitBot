@@ -145,3 +145,14 @@
 - Split failures from the last hour from older retained error history in Diagnostics and Logs.
 - Added a one-click draft correction for unknown Channel Manager categories; it never sends changes without the existing preview and owner confirmation.
 - No new migration, secret, OAuth scope, bot permission, Queue binding, or Durable Object.
+
+## 0.1.0-alpha.51 — Reward + Panel Editing and Welcome Reliability
+
+- Added a current Leveling role-reward list and guild-scoped reward editing.
+- Separated XP settings from reward creation to prevent accidental duplicates.
+- Added editing for existing Role Panels, including Discord message updates and missing-message repair.
+- Preserved member role assignments and fixed panel destinations during edits.
+- Added a test welcome action, explicit member mention allowlisting, and sanitized welcome/goodbye/auto-role failure logs.
+- Isolated Community welcome handling from Shield join-processing failures.
+- Added a dedicated Diagnostics navigation link.
+- No new migration, secret, OAuth scope, bot permission, Queue binding, or Durable Object.

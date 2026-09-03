@@ -18,5 +18,5 @@ export async function renderLogs(){
     $('#downloadVerboseErrors')?.addEventListener('click',()=>downloadErrors(data.errors));
   }catch(error){renderError(`Logs failed (${error.payload?.detail||error.message}).`)}
 }
-function downloadErrors(errors){const report={version:'0.1.0-alpha.50',generated_at:new Date().toISOString(),guild:'redacted',errors};const blob=new Blob([JSON.stringify(report,null,2)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-server-errors-${Date.now()}.txt`;a.click();URL.revokeObjectURL(a.href);}
+function downloadErrors(errors){const report={version:'0.1.0-alpha.51',generated_at:new Date().toISOString(),guild:'redacted',errors};const blob=new Blob([JSON.stringify(report,null,2)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-server-errors-${Date.now()}.txt`;a.click();URL.revokeObjectURL(a.href);}
 function errorRow(e){return `<div class="notice error verbose-error"><strong>${escapeHtml(e.error_code)}</strong><br><span class="small">${escapeHtml(e.method)} ${escapeHtml(e.route)} · HTTP ${escapeHtml(e.status)}<br>${new Date(e.created_at).toLocaleString()} · ${escapeHtml(e.request_id)}</span><code>${escapeHtml(JSON.stringify(e.detail||{}))}</code></div>`}

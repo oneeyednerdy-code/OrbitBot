@@ -64,7 +64,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'roles') return rolesApi(request, env, guildId, session.user_id);
   if (action === 'tickets') return ticketsApi(request, env, guildId);
   if (action === 'scheduler') return schedulerApi(request, env, guildId, session.user_id);
-  if (action === 'leveling') return levelingApi(request, env, guildId);
+  if (action === 'leveling') return levelingApi(request, env, guildId, session.user_id);
   if (action === 'automation') return automationApi(request, env, guildId, session.user_id);
   if (action === 'community') return communityApi(request, env, guildId, session.user_id);
   if (action === 'kofi') return kofiApi(request, env, guildId);
