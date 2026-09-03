@@ -16,7 +16,7 @@ export async function logsApi(env: Env, guildId: string): Promise<Response> {
   }
   return json({
     events: auditRows.results,
-    errors: errors.map((row:any)=>({...row,detail:parse(row.detail_json)})),
+    errors: errors.map((row:any)=>({...row,detail:parse(row.detail_json),recency:Number(row.created_at)>=Date.now()-60*60_000?'recent':'history'})),
     warnings,
   });
 }

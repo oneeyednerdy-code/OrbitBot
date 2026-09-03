@@ -82,8 +82,42 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'connections') return connectionsApi(request, env, guildId, session.user_id);
   if (action === 'bug-reports') return bugReportsApi(request, env, guildId, session.user_id);
   if (action === 'channel-manager') return channelManagerApi(request, env, guildId, session.user_id, guild);
-  if (action === 'start-gateway' && request.method === 'POST') { const id=env.GATEWAY.idFromName('discord'); const response=await env.GATEWAY.get(id).fetch('https://gateway/start',{method:'POST'}); const data=await response.json<any>(); return json(data,response.status); }
+  if (action === 'start-gateway' && request.method === 'POST') return startGateway(request, env, guildId, guild, session.user_id);
   return json({ error: 'bad_request' }, 400);
+}
+
+async function startGateway(request: Request, env: Env, guildId: string, guild: any, actorId: string): Promise<Response> {
+  if (!env.GATEWAY) return json({ error: 'gateway_unavailable', detail: 'The Discord Gateway binding is not configured.' }, 503);
+  let body: any = {};
+  if (request.headers.get('content-type')?.includes('application/json')) {
+    try { body = await request.json<any>(); }
+    catch { return json({ error: 'invalid_json', detail: 'The Gateway request body is not valid JSON.' }, 400); }
+  }
+  const force = body.force === true;
+  if (force) {
+    if (guild?.owner !== true) return json({ error: 'owner_only', detail: 'Only the Discord server owner can clear a terminal Gateway safety halt.' }, 403);
+    if (String(body.confirmation || '') !== 'RETRY GATEWAY' || body.acknowledged !== true) {
+      return json({ error: 'confirmation_required', detail: 'Review the Discord intent settings, acknowledge the warning, and type RETRY GATEWAY exactly.' }, 400);
+    }
+  }
+  const id = env.GATEWAY.idFromName('discord');
+  const endpoint = force ? 'https://gateway/start?force=1' : 'https://gateway/start';
+  const response = await env.GATEWAY.get(id).fetch(endpoint, { method: 'POST' });
+  const data = await response.json<any>();
+  const recovery = data?.halt_reason === 'disallowed_intents' ? {
+    required_intents: ['Server Members Intent', 'Message Content Intent'],
+    developer_portal: 'https://discord.com/developers/applications',
+    owner_only: true,
+    confirmation_phrase: 'RETRY GATEWAY',
+  } : null;
+  if (force) await audit(env, guildId, null, 'gateway_force_retry_requested', { previous_halt_reason: body.previous_halt_reason || null, result_state: data?.state || null, result_halt_reason: data?.halt_reason || null }, actorId);
+  return json({
+    ...data,
+    ...(recovery ? {
+      recovery,
+      detail: 'Discord rejected Orbit’s privileged intents. Enable Server Members Intent and Message Content Intent in the Discord Developer Portal, save, then use the owner-only guarded retry.',
+    } : {}),
+  }, response.status);
 }
 
 async function guildBootstrap(env: Env, guildId: string, guild: any): Promise<Response> {

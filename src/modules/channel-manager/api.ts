@@ -82,7 +82,22 @@ async function previewCreate(env:Env,guildId:string,body:any):Promise<Response>{
   for(const category of newCategories)if(items.filter((item:any)=>item.parent_temp_id===category.temp_id).length>50)errors.push(`${category.name} would exceed Discord’s 50-channel category limit.`);
   items.sort((a:any,b:any)=>{const categoryOrder=(a.kind==='category'?0:1)-(b.kind==='category'?0:1);if(categoryOrder)return categoryOrder;if(a.kind==='category')return a.position-b.position;const parentA=a.parent_temp_id||a.parent_id||'~',parentB=b.parent_temp_id||b.parent_id||'~';return parentA.localeCompare(parentB)||a.position-b.position});
   const fingerprint=await digest(JSON.stringify(items));
-  return json({items,errors,fingerprint,confirmation_phrase:`CREATE ${items.length} CHANNELS`,warning:'Orbit will create these items one at a time through Discord and record the result of each item.'},errors.length?400:200);
+  const unresolvedCategories=[...new Set(items.map((item:any)=>item.unresolved_parent_name).filter(Boolean))];
+  return json({
+    ...(errors.length ? { error:'invalid_create_plan', detail:errors[0] } : {}),
+    items,
+    errors,
+    unresolved_categories:unresolvedCategories,
+    recovery:unresolvedCategories.length ? {
+      action:'add_missing_categories',
+      label:'Add missing categories to this plan',
+      categories:unresolvedCategories,
+      detail:'Orbit will add these names to the New categories draft and preview again. Nothing is sent to Discord until the owner confirms the validated plan.',
+    } : null,
+    fingerprint,
+    confirmation_phrase:`CREATE ${items.length} CHANNELS`,
+    warning:'Orbit will create these items one at a time through Discord and record the result of each item.',
+  },errors.length?400:200);
 }
 
 async function executeCreate(env:Env,guildId:string,actorId:string,body:any):Promise<Response>{

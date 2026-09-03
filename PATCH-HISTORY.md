@@ -134,3 +134,14 @@
 - Added atomic Ko-fi total increments and conditional XP cooldown awards.
 - Added outbound public-HTTPS checks, log retention, stronger log redaction, and a reproducible dependency lockfile.
 - Added migration `0036_security_reliability_hardening.sql`.
+
+## 0.1.0-alpha.50 — Gateway Recovery + Clearer Diagnostics
+
+- Added an owner-only, exact-phrase-confirmed Gateway retry that exposes the existing guarded force-recovery path.
+- Added in-dashboard setup guidance for Discord's Server Members and Message Content privileged intents.
+- Kept the five-minute retry cooldown, IDENTIFY budget floor, and terminal halt protections intact.
+- Added audit history for every owner force-retry request.
+- Separated the core health score from optional social-connection warnings.
+- Split failures from the last hour from older retained error history in Diagnostics and Logs.
+- Added a one-click draft correction for unknown Channel Manager categories; it never sends changes without the existing preview and owner confirmation.
+- No new migration, secret, OAuth scope, bot permission, Queue binding, or Durable Object.

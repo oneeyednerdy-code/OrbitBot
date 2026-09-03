@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.49 — Deploy Me First
+# Orbit v0.1.0-alpha.50 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.49. Apply `0036_security_reliability_hardening.sql` before deploying the Worker.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.50. Apply `0036_security_reliability_hardening.sql` before deploying the Worker.
 
 ## 1. Prerequisites
 

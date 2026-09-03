@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.49 — Build Validation
+# Orbit v0.1.0-alpha.50 — Build Validation
 
 Validated on 2026-09-03.
 
@@ -7,7 +7,7 @@ Validated on 2026-09-03.
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
 - TypeScript strict check: `tsc --noEmit` passes with TypeScript 5.9.3.
 - Worker bundle: the complete Worker bundles successfully with esbuild.
-- Unit tests: eight regression tests pass across scheduler recurrence, OAuth authorization, guild-resource middleware, safe mentions, and retained restore snapshots.
+- Unit tests: eleven regression tests pass across scheduler recurrence, OAuth authorization, guild-resource middleware, safe mentions, retained restore snapshots, Gateway recovery authorization, diagnostics grouping, and Channel Manager category recovery.
 - D1 migration chain: all 36 migrations apply cleanly to an empty SQLite database and create 62 application tables.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
@@ -21,7 +21,12 @@ Validated on 2026-09-03.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.49`.
+- Login page and dashboard footer both display `v0.1.0-alpha.50`.
+- Gateway force retry is restricted to the Discord server owner, requires an acknowledgement and the exact phrase `RETRY GATEWAY`, retains the five-minute cooldown, and creates an audit event.
+- The dashboard explains the required Server Members and Message Content privileged intents when Discord halts the Gateway with `disallowed_intents`.
+- Core health scoring excludes optional social integrations while leaving those checks visible in a separate section.
+- Diagnostics and Logs distinguish failures from the last hour from older retained error history.
+- Unknown Channel Manager parent categories return a structured correction that can add missing category names to the draft and re-preview without sending changes to Discord.
 - Connection OAuth rejects every non-`ok` guild authorization result.
 - Guild mutations centrally validate submitted channel and role IDs against the managed server.
 - Discord message sends default to `allowed_mentions.parse=[]` unless a bounded explicit allowlist is supplied.

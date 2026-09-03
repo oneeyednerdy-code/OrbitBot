@@ -11,6 +11,7 @@ const MANAGE_CHANNELS = 1n << 4n;
 
 export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy: string) {
   const checks: any[] = [];
+  let gatewayRuntime: any = null;
   const rolesRes = await discord(env, `/guilds/${guildId}/roles`);
   const botRes = await discord(env, `/guilds/${guildId}/members/${env.DISCORD_CLIENT_ID}`);
   checks.push(check('discord_api', rolesRes.ok && botRes.ok, 'Discord API', rolesRes.ok && botRes.ok ? 'Connected and bot membership readable.' : 'Orbit could not read server roles or its member record.'));
@@ -27,6 +28,14 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
         const id = env.GATEWAY.idFromName('discord');
         const gatewayResponse = await env.GATEWAY.get(id).fetch('https://gateway/status');
         const gateway = await gatewayResponse.json<any>();
+        gatewayRuntime = {
+          state: gateway.state,
+          halt_reason: gateway.halt_reason || null,
+          halted_at: gateway.halted_at || null,
+          next_attempt_at: gateway.next_attempt_at || null,
+          session_start_remaining: gateway.session_start_remaining ?? null,
+          session_start_total: gateway.session_start_total ?? null,
+        };
         const healthy = gateway.state === 'ready' || gateway.state === 'handshaking' || gateway.state === 'connecting';
         const detail = gateway.state === 'halted'
           ? `Gateway halted safely: ${gateway.halt_reason || 'unknown'}. Orbit will not burn additional Discord IDENTIFY attempts.`
@@ -42,8 +51,8 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
   }
   if (enabled.has('alerts') || enabled.has('social')) {
     const connectionCount = await env.DB.prepare("SELECT COUNT(*) count FROM creator_account_connections WHERE guild_id=? AND status='connected'").bind(guildId).first<{count:number}>();
-    checks.push(check('credential_encryption', Boolean(env.SOCIAL_CREDENTIAL_KEY), 'Connection encryption', env.SOCIAL_CREDENTIAL_KEY ? 'Server-side social credential encryption is configured.' : 'SOCIAL_CREDENTIAL_KEY is missing, so account connections are disabled.'));
-    checks.push(check('creator_connections', Number(connectionCount?.count||0)>0, 'Creator connections', Number(connectionCount?.count||0)>0 ? `${connectionCount?.count} creator account connection(s) are active.` : 'No creator accounts are connected yet.'));
+    checks.push(check('credential_encryption', Boolean(env.SOCIAL_CREDENTIAL_KEY), 'Connection encryption', env.SOCIAL_CREDENTIAL_KEY ? 'Server-side social credential encryption is configured.' : 'SOCIAL_CREDENTIAL_KEY is missing, so account connections are disabled.', 'optional'));
+    checks.push(check('creator_connections', Number(connectionCount?.count||0)>0, 'Creator connections', Number(connectionCount?.count||0)>0 ? `${connectionCount?.count} creator account connection(s) are active.` : 'No creator accounts are connected yet.', 'optional'));
   }
   if (rolesRes.ok && botRes.ok) {
     const roles = await rolesRes.json<any[]>();
@@ -71,8 +80,22 @@ export async function diagnosticsSnapshot(env: Env, guildId: string, requestedBy
     if (!missingErrorLogTable(error)) throw error;
     checks.push(check('verbose_error_log', false, 'Verbose error log', 'D1 migration 0029_social_auth_verbose_errors.sql is missing. Run npm run db:remote, then run Diagnostics again.'));
   }
-  const score = Math.round((checks.filter(c=>c.ok).length / Math.max(checks.length,1)) * 100);
-  const result = { score, status: score === 100 ? 'healthy' : score >= 75 ? 'attention' : 'critical', checks, recent_errors: recentErrors, generated_at: Date.now() };
+  const coreChecks = checks.filter(c => c.category !== 'optional');
+  const score = Math.round((coreChecks.filter(c=>c.ok).length / Math.max(coreChecks.length,1)) * 100);
+  const recentCutoff = Date.now() - 60 * 60_000;
+  const recentFailures = recentErrors.filter(error => Number(error.created_at) >= recentCutoff);
+  const errorHistory = recentErrors.filter(error => Number(error.created_at) < recentCutoff);
+  const result = {
+    score,
+    status: score === 100 ? 'healthy' : score >= 75 ? 'attention' : 'critical',
+    score_scope: 'core',
+    checks,
+    gateway: gatewayRuntime,
+    recent_failures: recentFailures,
+    error_history: errorHistory,
+    recent_errors: recentErrors,
+    generated_at: Date.now(),
+  };
   return result;
 }
 
@@ -81,6 +104,6 @@ export async function diagnosticsApi(env: Env, guildId: string, requestedBy: str
   if (persist) await env.DB.prepare('INSERT INTO diagnostic_runs(guild_id,requested_by,status,result_json,created_at,completed_at) VALUES(?,?,?,?,?,?)').bind(guildId, requestedBy, result.status, JSON.stringify(result), Date.now(), Date.now()).run();
   return json(result);
 }
-function check(code:string, ok:boolean, label:string, detail:string){return {code,ok,label,detail,severity:ok?'ok':'warning'};}
+function check(code:string, ok:boolean, label:string, detail:string, category:'core'|'optional'='core'){return {code,ok,label,detail,severity:ok?'ok':'warning',category};}
 function safeJson(value:string){try{return JSON.parse(value||'{}')}catch{return {raw:String(value||'').slice(0,1200)}}}
 function missingErrorLogTable(error:any){return /no such table:\s*orbit_error_log/i.test(String(error?.message||error||''))}

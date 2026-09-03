@@ -26,3 +26,26 @@ test('failed protection restores retain their snapshots',async()=>{
   assert.match(source,/DELETE FROM \$\{definition\.table\} WHERE guild_id=\? AND channel_id=\?/);
   assert.match(source,/restore_status='failed'/);
 });
+
+test('Gateway force retry is owner-only, confirmed, and uses the guarded path',async()=>{
+  const source=await readFile(new URL('../src/modules/dashboard/api.ts',import.meta.url),'utf8');
+  assert.match(source,/guild\?\.owner !== true/);
+  assert.match(source,/RETRY GATEWAY/);
+  assert.match(source,/gateway\/start\?force=1/);
+  assert.match(source,/gateway_force_retry_requested/);
+});
+
+test('diagnostics separates optional checks and retained error history',async()=>{
+  const source=await readFile(new URL('../src/modules/diagnostics/api.ts',import.meta.url),'utf8');
+  assert.match(source,/category !== 'optional'/);
+  assert.match(source,/recent_failures/);
+  assert.match(source,/error_history/);
+});
+
+test('Channel Manager offers an explicit missing-category recovery',async()=>{
+  const api=await readFile(new URL('../src/modules/channel-manager/api.ts',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../public/js/pages/channel-manager.js',import.meta.url),'utf8');
+  assert.match(api,/add_missing_categories/);
+  assert.match(api,/unresolved_categories/);
+  assert.match(ui,/Add missing categories to this plan/);
+});
