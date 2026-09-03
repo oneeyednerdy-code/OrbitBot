@@ -81,3 +81,11 @@
 - Guarded category and ticket-panel refreshes against guild/page changes.
 - Prevented stale Tickets failures from replacing the active page with an error screen.
 - No migration, secret, OAuth scope, or Discord permission changes.
+
+## 0.1.0-alpha.44 — Common Role Panel Templates
+- Added Pronouns, Notification Pings, Interests, and Regions quick templates.
+- Pronouns include He/Him, She/Her, They/Them, He/They, She/They, It/Its, Neopronouns, Any Pronouns, and Ask Me.
+- Templates automatically match existing roles by common aliases.
+- Added an explicit opt-in to create missing template roles in Discord.
+- Limited the role picker to roles below Orbit and added server-side channel, permission, hierarchy, managed-role, and 10-option validation.
+- Disabled mention parsing in panel copy and clean up incomplete database records when Discord refuses the post.

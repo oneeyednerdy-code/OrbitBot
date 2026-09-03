@@ -16,4 +16,4 @@ export async function renderLogs(){
     $('#downloadVerboseErrors')?.addEventListener('click',()=>downloadErrors(data.errors));
   }catch(error){renderError(`Logs failed (${error.payload?.detail||error.message}).`)}
 }
-function downloadErrors(errors){const report={version:'0.1.0-alpha.43',generated_at:new Date().toISOString(),guild:'redacted',errors};const blob=new Blob([JSON.stringify(report,null,2)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-server-errors-${Date.now()}.txt`;a.click();URL.revokeObjectURL(a.href);}
+function downloadErrors(errors){const report={version:'0.1.0-alpha.44',generated_at:new Date().toISOString(),guild:'redacted',errors};const blob=new Blob([JSON.stringify(report,null,2)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-server-errors-${Date.now()}.txt`;a.click();URL.revokeObjectURL(a.href);}

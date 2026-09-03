@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.43
+# Start Here — Orbit v0.1.0-alpha.44
 
-Orbit alpha.43 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.44 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -53,3 +53,9 @@ The selected eligibility role is checked silently and is not pinged. An optional
 ## Alpha.43 Tickets page guard
 
 Tickets now ignores late API responses after you navigate to another page or server. No migration, secret, OAuth scope, or Discord permission is added by alpha.43.
+
+## Alpha.44 common Role Panel templates
+
+Open **Role Panels**, select Pronouns, Notification Pings, Interests, or Regions, and choose **Use Template**. Orbit matches existing roles by common names. If any are missing, you may explicitly enable **Create missing template roles in Discord** before posting. Orbit needs its existing Manage Roles permission and must remain above every self-assignable role.
+
+Alpha.44 adds no migration, secret, OAuth scope, or Discord permission.
