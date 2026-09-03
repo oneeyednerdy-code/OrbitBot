@@ -28,7 +28,8 @@ export interface Env {
 export type OrbitJob =
   | { type: 'scheduled-post-dispatch'; scheduledPostId: number }
   | { type: 'diagnostic-sweep'; guildId: string }
-  | { type: 'social-dispatch'; socialPostId: number };
+  | { type: 'social-dispatch'; socialPostId: number }
+  | { type: 'ticket-open-dispatch'; guildId: string; userId: string; categoryId: number; answers: Record<string,string>; interactionId: string; interactionToken: string; username: string };
 
 export interface SessionRow {
   id: string;

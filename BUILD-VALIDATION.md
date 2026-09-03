@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.44 — Build Validation
+# Orbit v0.1.0-alpha.45 — Build Validation
 
 Validated on 2026-09-02.
 
@@ -6,7 +6,7 @@ Validated on 2026-09-02.
 
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
 - TypeScript syntax: every file in `src/` transpiles with TypeScript 5.8.3.
-- D1 migration chain: all 32 migrations apply cleanly to an empty SQLite database and create 59 application tables.
+- D1 migration chain: all 33 migrations apply cleanly to an empty SQLite database and create 59 application tables.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
   - Gateway RESUME support,
@@ -19,7 +19,7 @@ Validated on 2026-09-02.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.44`.
+- Login page and dashboard footer both display `v0.1.0-alpha.45`.
 - Diagnostics and Logs return usable responses when `orbit_error_log` is absent and name migration `0029_social_auth_verbose_errors.sql` as the required recovery.
 - Unexpected D1 failures other than the specifically detected missing table continue to propagate as server errors.
 - Community and Leveling renderers verify page ownership after asynchronous requests and before refresh/error rendering.
@@ -32,6 +32,10 @@ Validated on 2026-09-02.
 - Role Panel quick templates match existing Discord roles and create missing roles only after the administrator explicitly enables that option.
 - Panel creation validates the destination channel, 10-role limit, Manage Roles permission, managed-role status, and Orbit's role hierarchy before posting.
 - Role Panel messages disable automatic mention parsing, and failed Discord posts remove their incomplete database records.
+- Ticket panels support a direct Open Ticket button or a category dropdown and surface Discord's message, code, and Orbit request reference when posting fails.
+- Ticket clicks acknowledge Discord immediately, enqueue channel creation, and update the private interaction response when processing finishes.
+- Migration `0033_ticket_interaction_jobs.sql` adds a unique interaction id for retry-safe ticket creation.
+- Private ticket channels explicitly grant Orbit, the opener, and configured staff access after denying `@everyone`.
 
 ## Environment limitation
 

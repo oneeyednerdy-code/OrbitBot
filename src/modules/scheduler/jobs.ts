@@ -2,12 +2,14 @@ import type { Env, OrbitJob } from '../../types';
 import { discord } from '../../discord/client';
 import { pollCreatorSources } from '../creator/poll';
 import { dispatchSocialPost, socialSweep } from '../social/dispatch';
+import { dispatchTicketOpen } from '../tickets/interactions';
 
 export async function handleQueue(batch: MessageBatch<OrbitJob>, env: Env): Promise<void> {
   for (const message of batch.messages) {
     try {
       if (message.body.type === 'scheduled-post-dispatch') await dispatchPost(env,message.body.scheduledPostId);
       if (message.body.type === 'social-dispatch') await dispatchSocialPost(env,message.body.socialPostId);
+      if (message.body.type === 'ticket-open-dispatch') await dispatchTicketOpen(env,message.body);
       message.ack();
     } catch { message.retry(); }
   }

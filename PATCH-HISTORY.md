@@ -89,3 +89,11 @@
 - Added an explicit opt-in to create missing template roles in Discord.
 - Limited the role picker to roles below Orbit and added server-side channel, permission, hierarchy, managed-role, and 10-option validation.
 - Disabled mention parsing in panel copy and clean up incomplete database records when Discord refuses the post.
+
+## 0.1.0-alpha.45 — Reliable Ticket Panels
+- Added Direct Ticket Button and Category Dropdown panel modes.
+- Added editable panel copy, direct-category selection, button labels, success links, and actionable Discord error codes/references.
+- Deferred ticket interactions immediately and moved channel creation to the existing job queue to avoid Discord interaction timeouts.
+- Added idempotent interaction tracking so queue retries cannot create duplicate tickets.
+- Explicitly grants Orbit access to each private ticket channel after denying `@everyone`.
+- Displays form responses in a bounded Discord embed and reports opening-message failures without hiding the created ticket.

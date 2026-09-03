@@ -1,6 +1,6 @@
-# Start Here — Orbit v0.1.0-alpha.44
+# Start Here — Orbit v0.1.0-alpha.45
 
-Orbit alpha.44 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.45 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 
@@ -59,3 +59,9 @@ Tickets now ignores late API responses after you navigate to another page or ser
 Open **Role Panels**, select Pronouns, Notification Pings, Interests, or Regions, and choose **Use Template**. Orbit matches existing roles by common names. If any are missing, you may explicitly enable **Create missing template roles in Discord** before posting. Orbit needs its existing Manage Roles permission and must remain above every self-assignable role.
 
 Alpha.44 adds no migration, secret, OAuth scope, or Discord permission.
+
+## Alpha.45 ticket panels
+
+Run `npm run db:remote` before deployment to apply `0033_ticket_interaction_jobs.sql`. Open **Tickets**, create at least one category, then choose either **Direct ticket button** or **Category dropdown** when posting the panel. Direct mode opens the selected category immediately or presents its questions first.
+
+Ticket channel creation uses the existing `JOBS` queue binding so Discord receives an immediate interaction acknowledgement. No new secret, OAuth scope, or Discord permission is required.

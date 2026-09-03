@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.44 — Deploy Me First
+# Orbit v0.1.0-alpha.45 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.42. Alpha.42 adds `0032_role_gated_community_alerts.sql` for role-gated creator alert configuration and delivery state.
+This ZIP is the **single cumulative Orbit deployment**. You do not install alpha.8, alpha.9, etc. separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.45. Alpha.45 adds `0033_ticket_interaction_jobs.sql` for retry-safe queued ticket creation.
 
 ## 1. Prerequisites
 
