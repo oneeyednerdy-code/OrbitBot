@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.61 — Deploy Me First
+# Orbit v0.1.0-alpha.62 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.61. Apply all pending migrations through `0045_short_video_uploads.sql` before deploying the Worker. Alpha.61 binds the direct short-form video upload flow to the `orbit-storage` R2 bucket and retains guarded editing for existing Discord categories and channels.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.62. Apply all pending migrations through `0046_owner_stream_alerts.sql` before deploying the Worker. Alpha.62 adds server-owner-only My Stream Twitch authorization and duplicate-safe live alerts while retaining the `orbit-storage` R2 upload binding and guarded editing for existing Discord categories and channels.
 
 ## 1. Prerequisites
 
@@ -108,6 +108,12 @@ npx wrangler secret put INSTAGRAM_CLIENT_ID
 npx wrangler secret put INSTAGRAM_CLIENT_SECRET
 ```
 
+For **My Stream**, configure `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`, and `SOCIAL_CREDENTIAL_KEY`. In the Twitch developer console, use this callback URL:
+
+`https://YOUR-ORBIT-DOMAIN/connections/twitch/callback`
+
+The server owner then connects Twitch from **Community Alerts → My Stream**. Orbit stores the authorization encrypted and only exposes that owner-linked Twitch account to the owner’s server configuration.
+
 Use a separate high-entropy `SOCIAL_CREDENTIAL_KEY`. Do not reuse the Discord bot token or Turnstile secret.
 
 ## 8. Apply D1 migrations
@@ -124,7 +130,7 @@ For a local test database:
 npm run db:local
 ```
 
-The complete release contains 45 ordered migrations. Do not manually skip migration files.
+The complete release contains 46 ordered migrations. Do not manually skip migration files.
 
 ## 8a. Enable direct video uploads (optional)
 

@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.61 — Extremely Detailed Windows Deployment Guide
+# Orbit v0.1.0-alpha.62 — Extremely Detailed Windows Deployment Guide
 
 This is the step-by-step guide for deploying the **single cumulative Orbit build**. It assumes Windows 10/11 and PowerShell. Do not deploy the older alpha ZIPs first.
 
@@ -71,7 +71,7 @@ If either command says it is not recognized, restart Windows and try again.
 
 ## 4. Extract the ZIP
 
-1. Download `Orbit-v0.1.0-alpha.61-CONTROL-PLANE.zip`.
+1. Download `Orbit-v0.1.0-alpha.62-OWNER-STREAM.zip`.
 2. Right-click the ZIP in File Explorer.
 3. Choose **Extract All**.
 4. Extract it somewhere easy to find, for example:

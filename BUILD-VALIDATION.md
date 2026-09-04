@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.61 — Build Validation
+# Orbit v0.1.0-alpha.62 — Build Validation
 
 Validated on 2026-09-04.
 
@@ -7,8 +7,8 @@ Validated on 2026-09-04.
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
 - TypeScript strict check: `tsc --noEmit` passes with TypeScript 5.9.3.
 - Worker bundle: the complete Worker bundles successfully with esbuild.
-- Unit tests: 35 regression tests pass, including creator feed deduplication/status, stream-end automation templates, automation/scheduler edit/delete, server channel-count search, Community Engagement sample loading, scheduler recurrence, automation loop protection, fail-closed automation conditions, bounded queue retries, browser navigation cancellation, reliability control-plane surfaces, event RSVP wiring, stale-resource diagnostics, the Events page data-loading regression, short-form video upload wiring, and Channel Manager edit previews.
-- D1 migration chain: all 45 migrations apply cleanly to an empty SQLite database.
+- Unit tests: 36 regression tests pass, including owner-only My Stream authorization/configuration, duplicate-safe Twitch stream IDs, creator feed deduplication/status, stream-end automation templates, automation/scheduler edit/delete, server channel-count search, Community Engagement sample loading, scheduler recurrence, automation loop protection, fail-closed automation conditions, bounded queue retries, browser navigation cancellation, reliability control-plane surfaces, event RSVP wiring, stale-resource diagnostics, the Events page data-loading regression, short-form video upload wiring, and Channel Manager edit previews.
+- D1 migration chain: all 46 migrations apply cleanly to an empty SQLite database; local D1 also applied `0046_owner_stream_alerts.sql` successfully.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
   - Gateway RESUME support,
@@ -21,7 +21,7 @@ Validated on 2026-09-04.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.61` from centralized runtime version metadata.
+- Login page and dashboard footer both display `v0.1.0-alpha.62` from centralized runtime version metadata.
 - External Discord, OAuth, social, creator, RSS, Turnstile, and interaction callback calls use bounded request timeouts.
 - Queue jobs use exponential retry delays, stop after five attempts, record sanitized failures, and write terminal status where the backing table supports it.
 - Audit Feed events left pending by a missed enqueue are recovered from the database outbox by the scheduled sweep.
@@ -58,6 +58,8 @@ Validated on 2026-09-04.
 - Channel Manager accepts only one queued/running operation per server and immediately locks action buttons against double submission.
 - Dashboard navigation paints an animated transition before loading page data, with reduced-motion support.
 - Scheduled Posts paints immediate progress before its create/action API request and restores an actionable state on failure.
+- Community Alerts exposes My Stream only to the Discord server owner, carries owner intent through Twitch OAuth, validates the selected channel/role, and supports save/delete/reconnect controls.
+- Owner stream polling remembers the Twitch stream ID and only sends the first notification for each live session.
 - Standard checkboxes render at a consistent 16px without changing custom feature-selection controls.
 - Channel Manager is hidden from non-owners and independently rejects non-owner API calls.
 - Delete previews expand optional category cascades, block active Orbit/Discord dependencies, require a reason and exact confirmation, and are revalidated before queueing.

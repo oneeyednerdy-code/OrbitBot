@@ -19,6 +19,9 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
   if (!guildId || !/^\d+$/.test(guildId)) return json({ error: 'guild_required' }, 400);
   const authz = await managedGuild(request, env, guildId, session);
   if (!authz.ok) return json({ error: authz.error, detail: authz.detail, retry_after: authz.retry_after }, authz.status);
+  const purpose=requestUrl.searchParams.get('purpose');
+  if(purpose&&!(platform==='twitch'&&purpose==='owner_stream'))return json({error:'invalid_connection_purpose'},400);
+  if(purpose==='owner_stream'&&authz.guild?.owner!==true)return json({error:'owner_only',detail:'Only the Discord server owner can connect Twitch for My Stream alerts.'},403);
   if (!env.SOCIAL_CREDENTIAL_KEY) return json({ error: 'social_credential_key_missing' }, 503);
 
   const state = randomToken();
@@ -27,7 +30,7 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
 
   if (platform === 'twitch') {
     if (!env.TWITCH_CLIENT_ID || !env.TWITCH_CLIENT_SECRET) return json({ error: 'twitch_oauth_not_configured' }, 503);
-    await saveState(env, state, guildId, session.user_id, platform, now, null);
+    await saveState(env, state, guildId, session.user_id, platform, now, purpose==='owner_stream'?JSON.stringify({purpose:'owner_stream'}):null);
     const url = new URL('https://id.twitch.tv/oauth2/authorize');
     url.searchParams.set('client_id', env.TWITCH_CLIENT_ID);
     url.searchParams.set('redirect_uri', `${env.APP_ORIGIN}/connections/twitch/callback`);
@@ -126,6 +129,9 @@ export async function connectionOauthCallback(request: Request, env: Env, platfo
   if (!row || row.user_id !== session.user_id || row.platform !== platform) return json({ error: 'invalid_oauth_state' }, 400);
   const authz = await managedGuild(request, env, row.guild_id, session);
   if (!authz.ok) return json({ error: authz.error, detail: authz.detail, retry_after: authz.retry_after }, authz.status);
+  let flowContext:any={};try{flowContext=row.context_json?JSON.parse(row.context_json):{};}catch{}
+  const ownerStream=platform==='twitch'&&flowContext?.purpose==='owner_stream';
+  if(ownerStream&&authz.guild?.owner!==true)return json({error:'owner_only',detail:'Only the Discord server owner can connect Twitch for My Stream alerts.'},403);
   await env.DB.prepare('DELETE FROM connection_oauth_states WHERE state_hash=?').bind(stateHash).run();
   if (!env.SOCIAL_CREDENTIAL_KEY) return json({ error: 'social_credential_key_missing' }, 503);
 
@@ -140,12 +146,12 @@ export async function connectionOauthCallback(request: Request, env: Env, platfo
 
     const cipher = await seal(JSON.stringify(result.credentials || result.token), env.SOCIAL_CREDENTIAL_KEY);
     const now = Date.now();
-    await env.DB.prepare(`INSERT INTO creator_account_connections(guild_id,platform,account_id,account_label,credential_ciphertext,scopes_json,status,expires_at,connected_by,created_at,updated_at)
-      VALUES(?,?,?,?,?,?, 'connected', ?,?,?,?)
-      ON CONFLICT(guild_id,platform,account_id) DO UPDATE SET account_label=excluded.account_label,credential_ciphertext=excluded.credential_ciphertext,scopes_json=excluded.scopes_json,status='connected',expires_at=excluded.expires_at,connected_by=excluded.connected_by,updated_at=excluded.updated_at`)
-      .bind(row.guild_id, platform, result.accountId, result.accountLabel, cipher, JSON.stringify(result.scopes), result.expiresAt, session.user_id, now, now).run();
+    await env.DB.prepare(`INSERT INTO creator_account_connections(guild_id,platform,account_id,account_label,account_login,credential_ciphertext,scopes_json,status,expires_at,connected_by,created_at,updated_at)
+      VALUES(?,?,?,?,?,?,?,'connected',?,?,?,?)
+      ON CONFLICT(guild_id,platform,account_id) DO UPDATE SET account_label=excluded.account_label,account_login=excluded.account_login,credential_ciphertext=excluded.credential_ciphertext,scopes_json=excluded.scopes_json,status='connected',expires_at=excluded.expires_at,connected_by=excluded.connected_by,updated_at=excluded.updated_at`)
+      .bind(row.guild_id, platform, result.accountId, result.accountLabel, result.accountLogin||null, cipher, JSON.stringify(result.scopes), result.expiresAt, session.user_id, now, now).run();
     await upsertSocialIntegration(env, row.guild_id, platform, result.accountLabel, cipher, now);
-    return redirect(`/?guild=${encodeURIComponent(row.guild_id)}&connected=${platform}#connections`);
+    return redirect(`/?guild=${encodeURIComponent(row.guild_id)}&connected=${platform}#${ownerStream?'creator':'connections'}`);
   } catch (error: any) {
     const requestId = await recordSystemError(env, row.guild_id, `/connections/${platform}/callback`, 'GET', 502, `${platform}_oauth_callback_failed`, { name:error?.name, message:error?.message });
     console.error('connection oauth callback failed', platform, requestId, error);
@@ -167,7 +173,7 @@ async function exchangeTwitch(code: string, env: Env) {
   if (!userResponse.ok) throw new Error(`twitch_user_failed_${userResponse.status}`);
   const user = (await userResponse.json<any>()).data?.[0];
   if (!user?.id) throw new Error('twitch_user_missing');
-  return { accountId: user.id, accountLabel: user.display_name || user.login || user.id, token, scopes: token.scope || [], expiresAt: Date.now() + Number(token.expires_in || 0) * 1000 };
+  return { accountId: user.id, accountLabel: user.display_name || user.login || user.id, accountLogin: user.login || null, credentials: { ...token, login: user.login || null, display_name: user.display_name || null }, token, scopes: token.scope || [], expiresAt: Date.now() + Number(token.expires_in || 0) * 1000 };
 }
 
 async function exchangeYoutube(code: string, env: Env) {

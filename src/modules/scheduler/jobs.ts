@@ -1,6 +1,6 @@
 import type { Env, OrbitJob } from '../../types';
 import { discord } from '../../discord/client';
-import { pollCreatorSources } from '../creator/poll';
+import { pollCreatorSources, pollOwnerStreamAlerts } from '../creator/poll';
 import { dispatchSocialPost, socialSweep } from '../social/dispatch';
 import { dispatchTicketAction, dispatchTicketOpen } from '../tickets/interactions';
 import { dispatchChannelManagerJob } from '../channel-manager/dispatch';
@@ -109,6 +109,7 @@ export async function scheduledSweep(env: Env): Promise<void> {
     env.DB.prepare('DELETE FROM diagnostic_runs WHERE created_at<?').bind(cleanupNow-90*24*60*60_000),
   ]);
   await pollCreatorSources(env);
+  await pollOwnerStreamAlerts(env);
   await pollTikTokAnnouncements(env);
   await socialSweep(env);
   await shortVideoSweep(env);

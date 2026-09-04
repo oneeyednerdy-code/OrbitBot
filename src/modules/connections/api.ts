@@ -7,7 +7,7 @@ import { loadGuildResources, validateChannelIds } from '../../discord/guild-reso
 export async function connectionsApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method === 'GET') {
     const [rows, tiktokAnnouncements] = await Promise.all([
-      env.DB.prepare(`SELECT id,platform,account_id,account_label,status,expires_at,created_at,updated_at
+      env.DB.prepare(`SELECT id,platform,account_id,account_label,account_login,status,expires_at,created_at,updated_at
         FROM creator_account_connections WHERE guild_id=? ORDER BY platform,account_label`).bind(guildId).all(),
       env.DB.prepare(`SELECT c.id,c.connection_id,c.discord_channel_id,c.message_template,c.enabled,c.poll_interval_minutes,c.last_checked_at,c.last_error,c.updated_at,
           a.account_id,a.account_label,a.status
@@ -87,6 +87,7 @@ export async function connectionsApi(request: Request, env: Env, guildId: string
       env.DB.prepare('DELETE FROM creator_account_connections WHERE id=? AND guild_id=?').bind(id, guildId),
       env.DB.prepare('DELETE FROM social_integrations WHERE guild_id=? AND platform=? AND account_label=?').bind(guildId, row.platform, row.account_label),
       env.DB.prepare('DELETE FROM tiktok_announce_configs WHERE connection_id=? AND guild_id=?').bind(id, guildId),
+      env.DB.prepare('DELETE FROM owner_stream_alert_configs WHERE connection_id=?').bind(id),
     ]);
     return json({ ok: true });
   }

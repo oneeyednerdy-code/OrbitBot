@@ -141,6 +141,26 @@ test('creator alerts support podcast and TikTok feeds, deduplication, and stream
   assert.match(page,/Delete Automation/);
 });
 
+test('owner stream alerts are owner-only, Twitch-linked, and duplicate-safe',()=>{
+  const api=read('src/modules/creator/api.ts');
+  const poll=read('src/modules/creator/poll.ts');
+  const oauth=read('src/modules/connections/oauth.ts');
+  const dashboard=read('src/modules/dashboard/api.ts');
+  const page=read('public/js/pages/creator.js');
+  const migration=read('migrations/0046_owner_stream_alerts.sql');
+  assert.match(api,/owner_only/);
+  assert.match(api,/save_owner_stream/);
+  assert.match(api,/owner_stream_alert_configs/);
+  assert.match(poll,/pollOwnerStreamAlerts/);
+  assert.match(poll,/last_stream_id/);
+  assert.match(oauth,/purpose==='owner_stream'/);
+  assert.match(oauth,/account_login/);
+  assert.match(dashboard,/creatorApi\(request, env, guildId, session\.user_id, guild\)/);
+  assert.match(page,/My Stream/);
+  assert.match(page,/Connect \/ Reconnect Twitch/);
+  assert.match(migration,/owner_stream_alert_configs/);
+});
+
 test('automation and scheduler support editing, deletion, stream-end templates, and role mentionability repair',()=>{
   const automationApi=read('src/modules/automation/api.ts');
   const automationEngine=read('src/modules/automation/engine.ts');
