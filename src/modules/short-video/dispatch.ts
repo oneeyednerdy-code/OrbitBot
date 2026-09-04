@@ -1,5 +1,6 @@
 import type { Env } from '../../types';
 import { publishShortVideo, checkShortVideoStatus } from './providers';
+import { cleanupExpiredShortVideoMedia } from './media';
 import { MAX_QUEUE_ATTEMPTS } from '../scheduler/retry-policy.js';
 
 const LEASE_MS = 10 * 60_000;
@@ -39,6 +40,7 @@ export async function dispatchShortVideo(env: Env, id: number): Promise<void> {
 
 export async function shortVideoSweep(env: Env): Promise<void> {
   const now = Date.now();
+  await cleanupExpiredShortVideoMedia(env);
   const processing = await env.DB.prepare(`SELECT r.id AS run_id,r.post_id,r.platform,r.external_id,p.*,c.*
     FROM short_video_runs r JOIN short_video_posts p ON p.id=r.post_id
     JOIN creator_account_connections c ON c.guild_id=p.guild_id AND c.platform=r.platform AND c.status='connected'

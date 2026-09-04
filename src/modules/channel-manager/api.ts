@@ -16,6 +16,8 @@ export async function channelManagerApi(request:Request,env:Env,guildId:string,a
   if(body.op==='execute-delete')return executeDelete(env,guildId,actorId,body);
   if(body.op==='preview-create')return previewCreate(env,guildId,body);
   if(body.op==='execute-create')return executeCreate(env,guildId,actorId,body);
+  if(body.op==='preview-edit')return previewEdit(env,guildId,body);
+  if(body.op==='execute-edit')return executeEdit(env,guildId,actorId,body);
   if(body.op==='preview-reorder')return previewReorder(env,guildId,body);
   if(body.op==='execute-reorder')return executeReorder(env,guildId,actorId,body);
   if(body.op==='create-backup')return createManualBackup(env,guildId,actorId,body);
@@ -113,6 +115,44 @@ async function executeCreate(env:Env,guildId:string,actorId:string,body:any):Pro
   const snapshotId=await snapshot(env,guildId,actorId,`Before create: ${reason.slice(0,80)}`,'automatic-create',[]);
   const jobId=await createJob(env,guildId,actorId,'create',reason,snapshotId,{items:preview.items},preview.items);
   await env.JOBS.send({type:'channel-manager-execute',jobId});await audit(env,guildId,null,'channel_manager_create_queued',{job_id:jobId,snapshot_id:snapshotId,count:preview.items.length,reason},actorId);
+  return json({ok:true,job_id:jobId,snapshot_id:snapshotId,status:'queued'});
+}
+
+async function previewEdit(env:Env,guildId:string,body:any):Promise<Response>{
+  const channels=await getChannels(env,guildId),channelMap=new Map(channels.map(channel=>[channel.id,channel])),raw=Array.isArray(body.items)?body.items.slice(0,100):[],errors:string[]=[],seen=new Set<string>(),items:any[]=[];
+  for(const draft of raw){
+    const id=String(draft.id||''),current=channelMap.get(id);
+    if(!current){errors.push(`Unknown channel or category ${id||'(missing ID)'}.`);continue;}
+    if(seen.has(id)){errors.push(`${current.name} appears more than once.`);continue;}seen.add(id);
+    const name=String(draft.name??current.name).trim();
+    if(!name||name.length>100)errors.push(`${current.name} must have a name from 1–100 characters.`);
+    const item:any={...current,id,name,type:current.type,parent_id:current.type===4?null:(draft.parent_id===undefined?current.parent_id:(draft.parent_id?String(draft.parent_id):null)),topic:current.topic??'',nsfw:draft.nsfw===undefined?Boolean(current.nsfw):Boolean(draft.nsfw),rate_limit_per_user:clamp(draft.rate_limit_per_user,0,21600,current.rate_limit_per_user||0),bitrate:clamp(draft.bitrate,8000,384000,current.bitrate||64000),user_limit:clamp(draft.user_limit,0,99,current.user_limit||0)};
+    if(item.parent_id){const parent=channelMap.get(item.parent_id);if(!parent||parent.type!==4)errors.push(`${name} must use an existing category from this server.`);if(item.parent_id===id)errors.push(`${name} cannot be its own parent category.`)}
+    if([0,5,15,16].includes(current.type)){item.topic=String(draft.topic??current.topic??'').slice(0,1024);item.nsfw=Boolean(draft.nsfw);}
+    items.push(item);
+  }
+  const finalCounts=new Map<string,number>();
+  for(const channel of channels.filter(channel=>channel.type!==4&&channel.parent_id))finalCounts.set(String(channel.parent_id),channels.filter(candidate=>candidate.type!==4&&candidate.parent_id===channel.parent_id).length);
+  for(const item of items){const before=channelMap.get(item.id)!;if(before.parent_id&&before.parent_id!==item.parent_id)finalCounts.set(before.parent_id,Math.max(0,(finalCounts.get(before.parent_id)||0)-1));if(item.parent_id&&before.parent_id!==item.parent_id)finalCounts.set(item.parent_id,(finalCounts.get(item.parent_id)||0)+1)}
+  for(const [categoryId,count] of finalCounts)if(count>50)errors.push(`${channelMap.get(categoryId)?.name||'That category'} would exceed Discord’s 50-channel category limit.`);
+  const changes=items.filter(item=>{const before=channelMap.get(item.id)!;return before.name!==item.name||before.parent_id!==item.parent_id||([0,5,15,16].includes(before.type)&&((before.topic||'')!==item.topic||Boolean(before.nsfw)!==Boolean(item.nsfw)||Number(before.rate_limit_per_user||0)!==Number(item.rate_limit_per_user||0)))||([2,13].includes(before.type)&&(Number(before.bitrate||0)!==Number(item.bitrate||0)||Number(before.user_limit||0)!==Number(item.user_limit||0)))});
+  if(!raw.length)errors.push('Select at least one existing category or channel to edit.');
+  if(!changes.length&&!errors.length)errors.push('Nothing changed. Adjust a name, category, or channel setting first.');
+  if(errors.length)return json({error:'invalid_edit_plan',detail:errors[0],errors,items,changes},400);
+  const fingerprint=await digest(JSON.stringify(changes.map(editSignature)));
+  return json({items,changes,fingerprint,confirmation_phrase:`EDIT ${changes.length} CHANNELS`,warning:'Orbit will apply these edits one at a time through Discord and record each result. A structural backup is captured first.'});
+}
+
+async function executeEdit(env:Env,guildId:string,actorId:string,body:any):Promise<Response>{
+  if(!env.JOBS)return json({error:'queue_unavailable',detail:'The Orbit job queue is not configured, so channel edits are disabled.'},503);
+  if(!await botCanManageChannels(env,guildId))return json({error:'missing_manage_channels',detail:'Orbit needs Manage Channels in Discord before it can edit channels.'},403);
+  const previewResponse=await previewEdit(env,guildId,body),preview=await previewResponse.clone().json<any>();if(!previewResponse.ok)return previewResponse;
+  if(body.fingerprint!==preview.fingerprint)return json({error:'preview_changed',detail:'The Discord structure changed. Preview the edits again.'},409);
+  if(String(body.confirmation||'')!==preview.confirmation_phrase)return json({error:'confirmation_required',detail:`Type ${preview.confirmation_phrase} exactly.`},400);
+  if(!body.acknowledged)return json({error:'acknowledgement_required',detail:'Confirm that you reviewed the edits and intend to update Discord.'},400);
+  const active=await activeJob(env,guildId);if(active)return json({error:'operation_in_progress',detail:`Channel Manager job #${active.id} is already ${active.status}. Wait for it to finish before sending another change.`},409);
+  const reason=(String(body.reason||'').trim()||'Owner edited existing channel structure').slice(0,512),snapshotId=await snapshot(env,guildId,actorId,`Before edit: ${reason.slice(0,80)}`,'automatic-edit',preview.changes.map((item:any)=>item.id));
+  const jobId=await createJob(env,guildId,actorId,'edit',reason,snapshotId,{items:preview.changes},preview.changes);await env.JOBS.send({type:'channel-manager-execute',jobId});await audit(env,guildId,null,'channel_manager_edit_queued',{job_id:jobId,snapshot_id:snapshotId,count:preview.changes.length,reason},actorId);
   return json({ok:true,job_id:jobId,snapshot_id:snapshotId,status:'queued'});
 }
 
@@ -224,6 +264,8 @@ async function scanDependencies(env:Env,guildId:string):Promise<Record<string,an
 async function safeActionJobs(env:Env,guildId:string):Promise<any[]>{try{return await listActionJobs(env,guildId,20)}catch{return []}}
 
 function kindType(kind:string):number{return kind==='category'?4:kind==='voice'?2:0}
+function clamp(value:any,min:number,max:number,fallback:number):number{const parsed=Number(value);return Number.isFinite(parsed)?Math.floor(Math.max(min,Math.min(max,parsed))):fallback}
+function editSignature(item:any):any[]{return [item.id,item.name,item.parent_id||null,item.topic||'',Boolean(item.nsfw),Number(item.rate_limit_per_user||0),Number(item.bitrate||0),Number(item.user_limit||0)]}
 function canonicalOrder(channels:Channel[]):any[]{const categories=channels.filter(channel=>channel.type===4).sort((a,b)=>a.position-b.position),items:any[]=[];categories.forEach((category,position)=>{items.push({id:category.id,name:category.name,type:category.type,parent_id:null,position});channels.filter(channel=>channel.type!==4&&channel.parent_id===category.id).sort((a,b)=>a.position-b.position).forEach((channel,index)=>items.push({id:channel.id,name:channel.name,type:channel.type,parent_id:category.id,position:index}))});channels.filter(channel=>channel.type!==4&&!channel.parent_id).sort((a,b)=>a.position-b.position).forEach((channel,index)=>items.push({id:channel.id,name:channel.name,type:channel.type,parent_id:null,position:index}));return items}
 function orderSignature(item:any):any[]{return [item.id,item.parent_id||null,Number(item.position||0)]}
 function safeArray(raw:any):any[]{try{const value=typeof raw==='string'?JSON.parse(raw):raw;return Array.isArray(value)?value:[]}catch{return []}}

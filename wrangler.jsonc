@@ -1,56 +1,87 @@
 {
-  "name": "orbitbot",
-  "main": "src/index.ts",
-  "compatibility_date": "2026-08-25",
-  "assets": {
-    "directory": "./public",
-    "binding": "ASSETS",
-    "run_worker_first": [
-      "/api/*",
-      "/oauth/*",
-      "/connections/*",
-      "/interactions",
-      "/verify/*",
-      "/logout"
-    ]
-  },
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "nerdspace-orbitbot",
-      "database_id": "d8026aeb-f816-4e63-98ce-a4d591d728c8",
-      "migrations_dir": "migrations"
-    }
-  ],
-  "secrets": {
-    "required": [
-      "DISCORD_CLIENT_ID",
-      "DISCORD_CLIENT_SECRET",
-      "DISCORD_BOT_TOKEN",
-      "DISCORD_PUBLIC_KEY",
-      "SESSION_SECRET",
-      "TURNSTILE_SECRET_KEY"
-    ]
-  },
-  "vars": {
-    "APP_ORIGIN": "https://orbitbot.oneeyednerdy.workers.dev",
-    "TURNSTILE_SITE_KEY": "0x4AAAAAAEdM8FKnSCsoDd_s",
-    "TURNSTILE_HOSTNAMES": "orbitbot.oneeyednerdy.workers.dev",
-    "ORBIT_OPERATOR_USER_IDS": ""
-    // Optional integrations are configured as secrets: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, THREADS_CLIENT_ID, THREADS_CLIENT_SECRET, SOCIAL_CREDENTIAL_KEY
-  },
-  // Optional Cloudflare bindings. KV/R2 are not required for the current feature set.
-  // "kv_namespaces": [{ "binding": "CACHE", "id": "YOUR-KV-ID" }],
-  // "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "orbit-storage" }],
-  "queues": {
-    "producers": [{ "binding": "JOBS", "queue": "orbit-jobs" }],
-    "consumers": [{ "queue": "orbit-jobs" }]
-  },
-  "triggers": { "crons": ["* * * * *"] },
-
-  "durable_objects": {
-    "bindings": [{ "name": "GATEWAY", "class_name": "DiscordGateway" }]
-  },
-  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["DiscordGateway"] }],
-  "preview_urls": false
+	"name": "orbitbot",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-08-25",
+	"assets": {
+		"directory": "./public",
+		"binding": "ASSETS",
+		"run_worker_first": [
+			"/api/*",
+			"/oauth/*",
+			"/connections/*",
+			"/interactions",
+			"/verify/*",
+			"/logout"
+		]
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "nerdspace-orbitbot",
+			"database_id": "d8026aeb-f816-4e63-98ce-a4d591d728c8",
+			"migrations_dir": "migrations"
+		}
+	],
+	"secrets": {
+		"required": [
+			"DISCORD_CLIENT_ID",
+			"DISCORD_CLIENT_SECRET",
+			"DISCORD_BOT_TOKEN",
+			"DISCORD_PUBLIC_KEY",
+			"SESSION_SECRET",
+			"TURNSTILE_SECRET_KEY"
+		]
+	},
+	"vars": {
+		"APP_ORIGIN": "https://orbitbot.oneeyednerdy.workers.dev",
+		"TURNSTILE_SITE_KEY": "0x4AAAAAAEdM8FKnSCsoDd_s",
+		"TURNSTILE_HOSTNAMES": "orbitbot.oneeyednerdy.workers.dev",
+		"ORBIT_OPERATOR_USER_IDS": ""
+		// Optional integrations are configured as secrets: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, THREADS_CLIENT_ID, THREADS_CLIENT_SECRET, SOCIAL_CREDENTIAL_KEY
+	},
+	// Optional Cloudflare bindings. KV/R2 are not required for the current feature set.
+	// "kv_namespaces": [{ "binding": "CACHE", "id": "YOUR-KV-ID" }],
+	// "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "orbit-storage" }],
+	"queues": {
+		"producers": [
+			{
+				"binding": "JOBS",
+				"queue": "orbit-jobs"
+			}
+		],
+		"consumers": [
+			{
+				"queue": "orbit-jobs"
+			}
+		]
+	},
+	"triggers": {
+		"crons": [
+			"* * * * *"
+		]
+	},
+	"durable_objects": {
+		"bindings": [
+			{
+				"name": "GATEWAY",
+				"class_name": "DiscordGateway"
+			}
+		]
+	},
+	"migrations": [
+		{
+			"tag": "v1",
+			"new_sqlite_classes": [
+				"DiscordGateway"
+			]
+		}
+	],
+	"preview_urls": false,
+	"r2_buckets": [
+		{
+			"bucket_name": "orbit-storage",
+			"binding": "orbit_storage",
+			"remote": true
+		}
+	]
 }

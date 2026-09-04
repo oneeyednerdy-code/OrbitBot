@@ -8,6 +8,7 @@ import { json } from './responses';
 import { operatorBugApi } from '../modules/bug-reports/api';
 import { recordSystemError } from '../repositories/errors';
 import { loadGuildResources, validateChannelIds, validateRoleIds } from '../discord/guild-resources';
+import { MAX_SHORT_VIDEO_UPLOAD_BYTES } from '../modules/short-video/constants';
 
 function validMutation(request: Request, env: Env, csrf: string): boolean {
   return request.headers.get('origin') === env.APP_ORIGIN && request.headers.get('x-orby-csrf') === csrf;
@@ -18,7 +19,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   const session = await getSession(request, env);
   if (!session) return json({ error: 'unauthorized' }, 401);
   const contentLength=Number(request.headers.get('content-length')||0);
-  const maxBodyBytes=url.pathname.endsWith('/reliability')?1_000_000:256_000;
+  const maxBodyBytes=url.pathname.endsWith('/reliability')?1_000_000:url.pathname.endsWith('/short-video-upload')?MAX_SHORT_VIDEO_UPLOAD_BYTES:256_000;
   if(request.method!=='GET'&&Number.isFinite(contentLength)&&contentLength>maxBodyBytes)return json({error:'request_too_large',detail:`Orbit API requests are limited to ${Math.round(maxBodyBytes/1024)} KB for this endpoint.`},413);
   if (request.method !== 'GET' && !validMutation(request, env, session.csrf_token)) return json({ error: 'forbidden' }, 403);
 
@@ -28,7 +29,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/guilds') return listManageableGuilds(request, env, session);
   if (url.pathname === '/api/operator/bugs') return operatorBugApi(request, env, session.user_id);
 
-  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|short-video|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
+  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
   if (!match) return json({ error: 'not_found' }, 404);
   const guildId = match[1];
   const action = match[2] ?? 'config';

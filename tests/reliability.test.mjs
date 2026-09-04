@@ -101,6 +101,20 @@ test('operations UI includes Action Center and Permission Doctor controls',()=>{
   assert.match(page,/Restore This Backup/);
 });
 
+test('Channel Manager can preview and queue edits for existing categories and channels',()=>{
+  const api=read('src/modules/channel-manager/api.ts');
+  const dispatch=read('src/modules/channel-manager/dispatch.ts');
+  const page=read('public/js/pages/channel-manager.js');
+  assert.match(api,/preview-edit/);
+  assert.match(api,/execute-edit/);
+  assert.match(api,/must use an existing category/);
+  assert.match(api,/automatic-edit/);
+  assert.match(dispatch,/job\.operation==='edit'/);
+  assert.match(dispatch,/channel_edit_failed/);
+  assert.match(page,/cmEditTarget/);
+  assert.match(page,/Queue Channel Edits/);
+});
+
 test('gateway status publishes its intent manifest and heartbeat health',()=>{
   const gateway=read('src/gateway/discord-gateway.ts');
   assert.match(gateway,/GATEWAY_INTENT_MANIFEST/);
@@ -177,6 +191,9 @@ test('short-form video and social management stay separate and enforce platform 
   const socialLimits=read('src/modules/social/limits.ts');
   const socialPage=read('public/js/pages/social.js');
   const migration=read('migrations/0044_short_video_posts.sql');
+  const uploadMigration=read('migrations/0045_short_video_uploads.sql');
+  const media=read('src/modules/short-video/media.ts');
+  const router=read('src/router.ts');
   assert.match(videoApi,/short_video_posts/);
   assert.match(videoApi,/youtube\.upload/);
   assert.match(videoProviders,/videos\?uploadType=resumable/);
@@ -186,12 +203,19 @@ test('short-form video and social management stay separate and enforce platform 
   assert.match(videoDispatch,/status='processing'/);
   assert.match(videoPage,/Post Video Now/);
   assert.match(videoPage,/Schedule Video/);
+  assert.match(videoPage,/type="file"/);
+  assert.match(videoPage,/short-video-upload/);
+  assert.match(media,/STORAGE\.put/);
+  assert.match(media,/shortVideoMediaUrl/);
+  assert.match(router,/serveShortVideoMedia/);
   assert.match(socialApi,/text_limit_exceeded/);
   assert.match(socialLimits,/bluesky: 300/);
   assert.match(socialLimits,/threads: 500/);
   assert.match(socialPage,/Post Now/);
   assert.match(socialPage,/Schedule Post/);
   assert.match(migration,/short_video_runs/);
+  assert.match(uploadMigration,/short_video_media/);
+  assert.match(uploadMigration,/media_key/);
 });
 
 test('server search can load channel counts without replacing the current session',()=>{

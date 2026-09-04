@@ -14,6 +14,7 @@ export async function dispatchChannelManagerJob(env:Env,jobId:number):Promise<vo
     const request=parse(job.request_json);
     if(job.operation==='delete')failures=await runDelete(env,job,request);
     else if(job.operation==='create')failures=await runCreate(env,job,request);
+    else if(job.operation==='edit')failures=await runEdit(env,job,request);
     else if(job.operation==='restore')failures=await runRestore(env,job,request);
     else if(job.operation==='reorder')failures=await runReorder(env,job,request);
     else throw new Error(`unsupported_operation_${job.operation}`);
@@ -47,6 +48,18 @@ async function runCreate(env:Env,job:any,request:any):Promise<any[]>{
     const response=await discord(env,`/guilds/${job.guild_id}/channels`,{method:'POST',headers:auditHeader(job.reason),body:JSON.stringify(payload)});
     if(response.ok){const created=await response.json<any>();row.new_channel_id=String(created.id);if(item.temp_id)tempMap.set(String(item.temp_id),String(created.id));await finishItem(env,row.id,'completed',null,null,String(created.id));}
     else failures.push(await failItem(env,job,row,response,'channel_create_failed'));
+  }
+  return failures;
+}
+
+async function runEdit(env:Env,job:any,request:any):Promise<any[]>{
+  const failures:any[]=[],rows=await items(env,job.id);
+  for(const row of rows){
+    await startItem(env,job.id,row.id);
+    const item=parse(row.payload_json),payload:any={name:String(item.name||row.name).slice(0,100)};
+    if(Number(item.type)!==4){payload.parent_id=item.parent_id?String(item.parent_id):null;if([0,5,15,16].includes(Number(item.type))){payload.topic=String(item.topic||'').slice(0,1024);payload.nsfw=Boolean(item.nsfw);payload.rate_limit_per_user=Number(item.rate_limit_per_user||0)}if([2,13].includes(Number(item.type))){payload.bitrate=Number(item.bitrate||64000);payload.user_limit=Number(item.user_limit||0)}}
+    const response=await discord(env,`/channels/${row.channel_id}`,{method:'PATCH',headers:auditHeader(job.reason),body:JSON.stringify(payload)});
+    if(response.ok)await finishItem(env,row.id,'completed',null,null,row.channel_id);else failures.push(await failItem(env,job,row,response,'channel_edit_failed'));
   }
   return failures;
 }

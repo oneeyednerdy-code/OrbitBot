@@ -33,6 +33,7 @@ import { connectionsApi } from '../connections/api';
 import { bugReportsApi } from '../bug-reports/api';
 import { channelManagerApi } from '../channel-manager/api';
 import { shortVideoApi } from '../short-video/api';
+import { shortVideoUploadApi } from '../short-video/media';
 import { createVerificationSession } from '../verification/session';
 import { loadGuildResources, validateChannelIds } from '../../discord/guild-resources';
 import { sendDiscordMessage } from '../../discord/messages';
@@ -85,6 +86,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'creator') return creatorApi(request, env, guildId);
   if (action === 'social') return socialApi(request, env, guildId, session.user_id);
   if (action === 'short-video') return shortVideoApi(request, env, guildId, session.user_id);
+  if (action === 'short-video-upload') return shortVideoUploadApi(request, env, guildId, session.user_id);
   if (action === 'security') return securityApi(request, env, guildId, session.user_id);
   if (action === 'shield') return shieldApi(request, env, guildId, session.user_id);
   if (action === 'creator-directory') return creatorDirectoryApi(request, env, guildId);

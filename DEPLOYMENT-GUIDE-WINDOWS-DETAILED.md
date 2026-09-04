@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.59 — Extremely Detailed Windows Deployment Guide
+# Orbit v0.1.0-alpha.60 — Extremely Detailed Windows Deployment Guide
 
 This is the step-by-step guide for deploying the **single cumulative Orbit build**. It assumes Windows 10/11 and PowerShell. Do not deploy the older alpha ZIPs first.
 
@@ -23,6 +23,7 @@ Optional features also need:
 - Google/YouTube API key for YouTube live detection.
 - A separate Orbit social-credential encryption key for Bluesky/Mastodon/Threads credentials.
 - YouTube OAuth credentials if Shorts uploads are needed.
+- A Cloudflare R2 bucket bound as `STORAGE` if direct video-file uploads are needed.
 - TikTok developer credentials with Display API and Content Posting API approval if TikTok relay/publishing is needed.
 - Instagram Business Login credentials and a professional Instagram account if Reels publishing is needed.
 
@@ -70,7 +71,7 @@ If either command says it is not recognized, restart Windows and try again.
 
 ## 4. Extract the ZIP
 
-1. Download `Orbit-v0.1.0-alpha.59-CONTROL-PLANE.zip`.
+1. Download `Orbit-v0.1.0-alpha.60-CONTROL-PLANE.zip`.
 2. Right-click the ZIP in File Explorer.
 3. Choose **Extract All**.
 4. Extract it somewhere easy to find, for example:

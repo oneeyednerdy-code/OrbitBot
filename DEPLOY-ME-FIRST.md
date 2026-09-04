@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.59 — Deploy Me First
+# Orbit v0.1.0-alpha.60 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.59. Apply all pending migrations through `0044_short_video_posts.sql` before deploying the Worker. Alpha.59 adds official TikTok OAuth/video relay, a separate short-form video queue for YouTube Shorts, TikTok, and Instagram Reels, platform-aware text limits, and explicit Discord post-now/schedule controls.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.60. Apply all pending migrations through `0045_short_video_uploads.sql` before deploying the Worker. Alpha.60 adds direct short-form video file uploads through R2 and guarded editing for existing Discord categories and channels.
 
 ## 1. Prerequisites
 
@@ -20,6 +20,8 @@ Optional integrations need their own credentials:
 - YouTube publishing: `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` (Orbit requests `youtube.upload`)
 - TikTok publishing/relay: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` (TikTok app approval for `video.list` and `video.publish` is required)
 - Instagram Reels publishing: `INSTAGRAM_CLIENT_ID`, `INSTAGRAM_CLIENT_SECRET` (Instagram professional account and Meta approval for `instagram_business_content_publish` are required)
+
+Direct Short-Form Video file uploads also need an R2 bucket bound as `STORAGE`. URL-only video posts continue to work without this binding.
 
 ## 2. Discord Developer Portal
 
@@ -122,9 +124,19 @@ For a local test database:
 npm run db:local
 ```
 
-The complete release contains 44 ordered migrations. Do not manually skip migration files.
+The complete release contains 45 ordered migrations. Do not manually skip migration files.
 
-## 8a. Provider callback URLs and publishing setup
+## 8a. Enable direct video uploads (optional)
+
+Create an R2 bucket and bind it to the Worker:
+
+```bash
+npx wrangler r2 bucket create orbit-storage
+```
+
+Uncomment the `r2_buckets` entry in `wrangler.jsonc` and set its `bucket_name` to the bucket you created. Redeploy Orbit after saving the binding. The Short-Form Video page will then show the file picker; without the binding, the public HTTPS URL fallback remains available.
+
+## 8b. Provider callback URLs and publishing setup
 
 Register these exact callback URLs with the provider apps:
 
@@ -132,7 +144,7 @@ Register these exact callback URLs with the provider apps:
 - TikTok: `https://YOUR-ORBIT-DOMAIN/connections/tiktok/callback`
 - Instagram: `https://YOUR-ORBIT-DOMAIN/connections/instagram/callback`
 
-Under **Connections**, authorize the account before opening **Social** or **Short-Form Video**. TikTok and Instagram publishing may remain restricted until the provider approves the requested product/scopes. Short-Form Video currently accepts a public HTTPS media URL because TikTok and Instagram retrieve the media from a URL when publishing; YouTube is uploaded to its resumable upload endpoint by Orbit.
+Under **Connections**, authorize the account before opening **Social** or **Short-Form Video**. TikTok and Instagram publishing may remain restricted until the provider approves the requested product/scopes. Short-Form Video accepts a direct MP4/MOV/WebM file when `STORAGE` is configured, or a public HTTPS media URL as a fallback. Orbit serves uploaded media over a random public HTTPS route so TikTok and Instagram can retrieve it; YouTube is uploaded to its resumable upload endpoint by Orbit.
 
 ## 9. Deploy
 

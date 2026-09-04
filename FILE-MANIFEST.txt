@@ -65,6 +65,7 @@ migrations/0041_leveling_usernames.sql
 migrations/0042_creator_source_items.sql
 migrations/0043_tiktok_announcements.sql
 migrations/0044_short_video_posts.sql
+migrations/0045_short_video_uploads.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -149,6 +150,7 @@ RELEASE-NOTES-0.1.0-alpha.56.md
 RELEASE-NOTES-0.1.0-alpha.57.md
 RELEASE-NOTES-0.1.0-alpha.58.md
 RELEASE-NOTES-0.1.0-alpha.59.md
+RELEASE-NOTES-0.1.0-alpha.60.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -213,7 +215,9 @@ src/modules/security-center/api.ts
 src/modules/shield/api.ts
 src/modules/shield/service.ts
 src/modules/short-video/api.ts
+src/modules/short-video/constants.ts
 src/modules/short-video/dispatch.ts
+src/modules/short-video/media.ts
 src/modules/short-video/providers.ts
 src/modules/social/adapters.ts
 src/modules/social/api.ts

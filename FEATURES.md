@@ -1,9 +1,10 @@
-# Orbit Feature Set — alpha.59 cumulative build
+# Orbit Feature Set — alpha.60 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
 - Server picker and online bot installation
 - No-logout Discord data refresh plus optional server channel-count search
+- Owner-only editing of existing Discord categories and channels with live validation, backup, preview, and queued audit results
 - Modular backend and split frontend page modules
 - D1 migration system
 - Diagnostics, audit logs, security-oriented error reporting, and an opt-in queued Discord Audit Feed
@@ -58,6 +59,7 @@
 - Bluesky, Mastodon and Threads adapters
 - Social Management composer with live Bluesky, Threads, Mastodon, and Discord character counters
 - Separate Short-Form Video queue for YouTube Shorts, TikTok Direct Post, and Instagram Reels
+- Short-Form Video file picker with server-side R2 storage plus public-HTTPS URL fallback
 - YouTube, TikTok, and Instagram API login connections with encrypted server-side credentials
 - Immediate or scheduled Discord posting from Social Management
 
