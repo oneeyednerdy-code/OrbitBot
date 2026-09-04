@@ -28,8 +28,10 @@ export interface Env {
 export type OrbitJob =
   | { type: 'scheduled-post-dispatch'; scheduledPostId: number }
   | { type: 'diagnostic-sweep'; guildId: string }
+  | { type: 'audit-log-dispatch'; auditEventId: number }
   | { type: 'social-dispatch'; socialPostId: number }
   | { type: 'channel-manager-execute'; jobId: number }
+  | { type: 'community-engagement-dispatch'; guildId: string }
   | { type: 'ticket-open-dispatch'; guildId: string; userId: string; categoryId: number; answers: Record<string,string>; interactionId: string; interactionToken: string; username: string }
   | { type: 'ticket-action-dispatch'; guildId: string; ticketId: number; action: 'close' | 'delete'; reason: string; actorId: string; actorRoleIds: string[]; actorPermissions: string; channelId: string; interactionId: string; interactionToken: string };
 
@@ -58,6 +60,7 @@ export interface GuildConfigRow {
   updated_by: string;
   updated_at: number;
   admin_log_channel_id: string | null;
+  post_audit_events: number;
   notify_combined_granted: number;
   notify_combined_removed: number;
   notify_rules_granted: number;

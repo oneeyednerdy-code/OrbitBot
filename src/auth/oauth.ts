@@ -2,6 +2,7 @@ import type { Env } from '../types';
 import { discord } from '../discord/client';
 import { ORBIT_INSTALL_PERMISSIONS } from '../discord/permissions';
 import { json, redirect } from '../http/responses';
+import { fetchWithTimeout } from '../http/fetch-timeout';
 import { randomToken, seal, sha256 } from '../security/crypto';
 
 export async function oauthStart(env: Env): Promise<Response> {
@@ -47,7 +48,7 @@ export async function oauthCallback(request: Request, env: Env): Promise<Respons
     code,
     redirect_uri: `${env.APP_ORIGIN}/oauth/callback`,
   });
-  const tokenResponse = await fetch('https://discord.com/api/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body });
+  const tokenResponse = await fetchWithTimeout('https://discord.com/api/oauth2/token', { method: 'POST', headers: { 'content-type': 'application/x-www-form-urlencoded' }, body });
   if (!tokenResponse.ok) return json({ error: 'oauth_exchange_failed' }, 502);
   const token = (await tokenResponse.json()) as any;
   const userResponse = await discord(env, '/users/@me', {}, token.access_token);

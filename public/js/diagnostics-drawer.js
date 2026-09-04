@@ -1,4 +1,5 @@
 import { api, escapeHtml, state, clientDiagnostics } from './core.js';
+import { ORBIT_VERSION } from './version.js';
 
 let last=null;
 export function initDiagnosticsDrawer(){
@@ -24,7 +25,7 @@ function render(data){
   if(list)list.innerHTML=data.checks.map(x=>`<div class="diag-check"><span class="diag-result ${x.ok?'ok':'warn'}">${x.ok?'✓':'!'}</span><div><strong>${escapeHtml(x.label)}</strong><div class="small">${escapeHtml(x.detail)}</div></div></div>`).join('');
   if(recent){const current=data.recent_failures||[],history=data.error_history||[];recent.innerHTML=`<div class="section-heading"><div><h3>Failures in the last hour</h3><div class="small">Older entries remain available as retained history.</div></div></div>${current.length?current.map(errorRow).join(''):'<div class="small">No failures in the last hour.</div>'}${history.length?`<details class="error-history"><summary>Earlier retained errors (${history.length})</summary>${history.map(errorRow).join('')}</details>`:''}`;}
 }
-function safeReport(){return {version:'0.1.0-alpha.51',generated_at:new Date().toISOString(),guild:'redacted',page:state.page,diagnostics:last,client:{user_agent:navigator.userAgent,online:navigator.onLine,errors:clientDiagnostics.errors.slice(-50),network_failures:clientDiagnostics.networkFailures.slice(-50),request_log:clientDiagnostics.requests.slice(-100)},privacy:'Verbose logs are sanitized. Tokens, secrets, cookies, authorization headers, credentials and message contents are excluded.'}}
+function safeReport(){return {version:ORBIT_VERSION,generated_at:new Date().toISOString(),guild:'redacted',page:state.page,diagnostics:last,client:{user_agent:navigator.userAgent,online:navigator.onLine,errors:clientDiagnostics.errors.slice(-50),network_failures:clientDiagnostics.networkFailures.slice(-50),request_log:clientDiagnostics.requests.slice(-100)},privacy:'Verbose logs are sanitized. Tokens, secrets, cookies, authorization headers, credentials and message contents are excluded.'}}
 async function copyReport(){const text=JSON.stringify(safeReport(),null,2);await navigator.clipboard.writeText(text);flash('Verbose diagnostic report copied.');}
 function downloadReport(){const blob=new Blob([JSON.stringify(safeReport(),null,2)],{type:'text/plain'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`orbit-verbose-diagnostics-${Date.now()}.txt`;a.click();URL.revokeObjectURL(a.href);}
 function openBugDialog(){const d=document.querySelector('#bugDialog');document.querySelector('#bugArea').value=state.page;document.querySelector('#bugResult').innerHTML='';d.showModal();}

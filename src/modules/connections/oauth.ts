@@ -6,6 +6,7 @@ import { randomToken, seal, sha256, openSeal } from '../../security/crypto';
 import { upsertSocialIntegration } from './api';
 import { recordSystemError } from '../../repositories/errors';
 import { publicHttpsUrl } from '../../security/outbound-url';
+import { fetchWithTimeout } from '../../http/fetch-timeout';
 
 const validPlatforms = new Set(['twitch','youtube','threads','mastodon']);
 
@@ -66,7 +67,7 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
   const instance = normalizeInstance(requestUrl.searchParams.get('instance'));
   if (!instance) return json({ error: 'mastodon_instance_required' }, 400);
   const redirectUri = `${env.APP_ORIGIN}/connections/mastodon/callback`;
-  const registration = await fetch(`${instance}/api/v1/apps`, {
+  const registration = await fetchWithTimeout(`${instance}/api/v1/apps`, {
     method: 'POST',
     redirect: 'error',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -133,10 +134,10 @@ async function saveState(env: Env, state: string, guildId: string, userId: strin
 
 async function exchangeTwitch(code: string, env: Env) {
   const body = new URLSearchParams({ client_id: env.TWITCH_CLIENT_ID!, client_secret: env.TWITCH_CLIENT_SECRET!, code, grant_type: 'authorization_code', redirect_uri: `${env.APP_ORIGIN}/connections/twitch/callback` });
-  const response = await fetch('https://id.twitch.tv/oauth2/token', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
+  const response = await fetchWithTimeout('https://id.twitch.tv/oauth2/token', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
   if (!response.ok) throw new Error(`twitch_exchange_failed_${response.status}`);
   const token = await response.json<any>();
-  const userResponse = await fetch('https://api.twitch.tv/helix/users', { headers: { Authorization: `Bearer ${token.access_token}`, 'Client-Id': env.TWITCH_CLIENT_ID! } });
+  const userResponse = await fetchWithTimeout('https://api.twitch.tv/helix/users', { headers: { Authorization: `Bearer ${token.access_token}`, 'Client-Id': env.TWITCH_CLIENT_ID! } });
   if (!userResponse.ok) throw new Error(`twitch_user_failed_${userResponse.status}`);
   const user = (await userResponse.json<any>()).data?.[0];
   if (!user?.id) throw new Error('twitch_user_missing');
@@ -145,10 +146,10 @@ async function exchangeTwitch(code: string, env: Env) {
 
 async function exchangeYoutube(code: string, env: Env) {
   const body = new URLSearchParams({ client_id: env.YOUTUBE_CLIENT_ID!, client_secret: env.YOUTUBE_CLIENT_SECRET!, code, grant_type: 'authorization_code', redirect_uri: `${env.APP_ORIGIN}/connections/youtube/callback` });
-  const response = await fetch('https://oauth2.googleapis.com/token', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
+  const response = await fetchWithTimeout('https://oauth2.googleapis.com/token', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
   if (!response.ok) throw new Error(`youtube_exchange_failed_${response.status}`);
   const token = await response.json<any>();
-  const channelResponse = await fetch('https://www.googleapis.com/youtube/v3/channels?part=id,snippet&mine=true', { headers: { Authorization: `Bearer ${token.access_token}` } });
+  const channelResponse = await fetchWithTimeout('https://www.googleapis.com/youtube/v3/channels?part=id,snippet&mine=true', { headers: { Authorization: `Bearer ${token.access_token}` } });
   if (!channelResponse.ok) throw new Error(`youtube_channel_failed_${channelResponse.status}`);
   const channel = (await channelResponse.json<any>()).items?.[0];
   if (!channel?.id) throw new Error('youtube_channel_missing');
@@ -158,7 +159,7 @@ async function exchangeYoutube(code: string, env: Env) {
 async function exchangeThreads(code: string, env: Env) {
   if (!env.THREADS_CLIENT_ID || !env.THREADS_CLIENT_SECRET) throw new Error('threads_oauth_not_configured');
   const body = new URLSearchParams({ client_id: env.THREADS_CLIENT_ID, client_secret: env.THREADS_CLIENT_SECRET, code, grant_type: 'authorization_code', redirect_uri: `${env.APP_ORIGIN}/connections/threads/callback` });
-  const response = await fetch('https://graph.threads.net/oauth/access_token', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
+  const response = await fetchWithTimeout('https://graph.threads.net/oauth/access_token', { method: 'POST', headers: {'content-type':'application/x-www-form-urlencoded'}, body });
   if (!response.ok) throw new Error(`threads_exchange_failed_${response.status}`);
   let token = await response.json<any>();
   if (!token?.access_token) throw new Error('threads_token_missing');
@@ -167,13 +168,13 @@ async function exchangeThreads(code: string, env: Env) {
     longUrl.searchParams.set('grant_type', 'th_exchange_token');
     longUrl.searchParams.set('client_secret', env.THREADS_CLIENT_SECRET);
     longUrl.searchParams.set('access_token', token.access_token);
-    const long = await fetch(longUrl);
+    const long = await fetchWithTimeout(longUrl);
     if (long.ok) token = { ...token, ...(await long.json<any>()) };
   } catch {}
   const meUrl = new URL('https://graph.threads.net/v1.0/me');
   meUrl.searchParams.set('fields', 'id,username');
   meUrl.searchParams.set('access_token', token.access_token);
-  const me = await fetch(meUrl);
+  const me = await fetchWithTimeout(meUrl);
   if (!me.ok) throw new Error(`threads_profile_failed_${me.status}`);
   const account = await me.json<any>();
   if (!account?.id) throw new Error('threads_user_missing');
@@ -186,7 +187,7 @@ async function exchangeMastodon(code: string, contextCipher: string | null, env:
   const instance = normalizeInstance(context.instance);
   if (!instance || !context.client_id || !context.client_secret) throw new Error('mastodon_oauth_context_invalid');
   const redirectUri = `${env.APP_ORIGIN}/connections/mastodon/callback`;
-  const response = await fetch(`${instance}/oauth/token`, {
+  const response = await fetchWithTimeout(`${instance}/oauth/token`, {
     method: 'POST',
     redirect: 'error',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
@@ -195,7 +196,7 @@ async function exchangeMastodon(code: string, contextCipher: string | null, env:
   if (!response.ok) throw new Error(`mastodon_exchange_failed_${response.status}`);
   const token = await response.json<any>();
   if (!token?.access_token) throw new Error('mastodon_token_missing');
-  const me = await fetch(`${instance}/api/v1/accounts/verify_credentials`, { headers: { authorization: `Bearer ${token.access_token}` },redirect:'error' });
+  const me = await fetchWithTimeout(`${instance}/api/v1/accounts/verify_credentials`, { headers: { authorization: `Bearer ${token.access_token}` },redirect:'error' });
   if (!me.ok) throw new Error(`mastodon_profile_failed_${me.status}`);
   const account = await me.json<any>();
   if (!account?.id) throw new Error('mastodon_user_missing');

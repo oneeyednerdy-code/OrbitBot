@@ -11,6 +11,7 @@ export const moduleCatalog = [
   { id: 'creator', label: 'Creator Notifications', status: 'active', description: 'RSS, YouTube feed and Twitch live notifications into Discord.' },
   { id: 'diagnostics', label: 'Diagnostics', status: 'active', description: 'Configuration, permission and infrastructure health checks.' },
   { id: 'community', label: 'Community', status: 'active', description: 'Welcome/goodbye, auto-role, custom commands, polls, reminders and sticky messages.' },
+  { id: 'community-engagement', label: 'Community Engagement', status: 'active', description: 'Recurring question prompts with uploadable question banks and duplicate prevention.' },
   { id: 'security', label: 'Security Center', status: 'active', description: 'Permission risk scanning and reversible selected-channel incident lockdown.' },
   { id: 'channel-manager', label: 'Owner Channel Manager', status: 'active', description: 'Owner-only bulk channel creation, dependency-aware deletion, structural backups and restore.' },
 ] as const;

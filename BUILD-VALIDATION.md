@@ -1,14 +1,14 @@
-# Orbit v0.1.0-alpha.51 — Build Validation
+# Orbit v0.1.0-alpha.56 — Build Validation
 
-Validated on 2026-09-03.
+Validated on 2026-09-04.
 
 ## Passed
 
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
 - TypeScript strict check: `tsc --noEmit` passes with TypeScript 5.9.3.
 - Worker bundle: the complete Worker bundles successfully with esbuild.
-- Unit tests: fourteen regression tests pass across scheduler recurrence, OAuth authorization, guild-resource middleware, safe mentions, retained restore snapshots, Gateway recovery authorization, diagnostics grouping, Channel Manager category recovery, Level reward editing, Role Panel editing, and welcome delivery.
-- D1 migration chain: all 36 migrations apply cleanly to an empty SQLite database and create 62 application tables.
+- Unit tests: 27 regression tests pass, including behavioral coverage for Community Engagement sample loading, scheduler recurrence, automation loop protection, fail-closed automation conditions, bounded queue retries, browser navigation cancellation, reliability control-plane surfaces, event RSVP wiring, and Gateway health metadata.
+- D1 migration chain: all 40 migrations apply cleanly to an empty SQLite database.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
   - Gateway RESUME support,
@@ -21,7 +21,17 @@ Validated on 2026-09-03.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.51`.
+- Login page and dashboard footer both display `v0.1.0-alpha.56` from centralized runtime version metadata.
+- External Discord, OAuth, social, creator, RSS, Turnstile, and interaction callback calls use bounded request timeouts.
+- Queue jobs use exponential retry delays, stop after five attempts, record sanitized failures, and write terminal status where the backing table supports it.
+- Audit Feed events left pending by a missed enqueue are recovered from the database outbox by the scheduled sweep.
+- Automation ignores bot/webhook messages, rejects unsupported actions, fails closed on unknown conditions, and treats Discord non-success responses as failures.
+- Role Panel listing avoids N+1 reads, item inserts are batched, and a failed D1 edit triggers a Discord compensation attempt.
+- Leveling awards only newly crossed rewards, honors `remove_previous`, and records partial Discord failures.
+- Discord Audit Feed settings validate the chosen channel and remain opt-in.
+- Audit delivery uses the existing Queue, persisted delivery state, expiring leases, and transient-only retries.
+- Discord audit summaries use a bounded metadata allowlist and never include raw event details or message content.
+- Audit feed messages explicitly disable parsed mentions and include a test-delivery action.
 - Leveling lists every configured role reward and updates rewards through guild-scoped, duplicate-protected mutations.
 - Role Panel edits update the original Discord message and existing database row; a missing message is safely reposted in the same channel.
 - Community welcome messages include a delivery test, bounded member mention allowlist, sanitized Discord failure logs, and isolation from Shield join failures.
@@ -38,7 +48,7 @@ Validated on 2026-09-03.
 - Protection restores delete only successfully restored snapshots and retain failures with request references.
 - Discord dashboard access tokens refresh from encrypted refresh tokens within a 30-day session lifetime.
 - Scheduled recurrence advances from the prior scheduled time in the configured timezone rather than completion time.
-- Stale page responses are cancelled before old renderers can replace nodes after navigation.
+- Navigating between pages or servers aborts the previous page request before an old renderer can replace current content.
 - Ko-fi totals increment atomically and require a transaction id; XP cooldown awards use a conditional atomic UPSERT.
 - RSS and Mastodon user-supplied destinations require public HTTPS URLs and do not follow redirects.
 - Existing categories and channels can be reordered with drag-and-drop; channels can move between categories or become uncategorized.
@@ -74,6 +84,12 @@ Validated on 2026-09-03.
 - Close preserves the channel/history while denying the opener Send Messages; Delete is restricted to configured ticket staff, Manage Channels, or Administrator.
 - Migration `0034_ticket_resolution_reasons.sql` preserves close/delete timestamps, actors, and reasons in Orbit records.
 - Existing ticket categories can be edited in place with guild-scoped server validation, and the dashboard prompts administrators to repost changed panels.
+
+Community Engagement accepts daily, weekly, every-two-weeks, and monthly schedules, parses one question per text-file line, uploads custom banks, and prevents a normalized question from being posted twice for a server.
+
+Community Engagement exposes eight bundled sample banks through a dashboard dropdown and loads the selected bank server-side without clearing posted-question history.
+
+Orbit configuration backups include guild-scoped settings, workflows, and question-bank configuration while excluding sessions, OAuth state, credentials, activity history, delivery runs, and Discord content; restores require an exact confirmation phrase and acknowledgement.
 
 ## Deployment-machine checks
 

@@ -1,6 +1,7 @@
 import type { Env } from '../../types';
 import { json } from '../../http/responses';
 import { seal } from '../../security/crypto';
+import { fetchWithTimeout } from '../../http/fetch-timeout';
 
 export async function connectionsApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method === 'GET') {
@@ -26,7 +27,7 @@ export async function connectionsApi(request: Request, env: Env, guildId: string
     const appPassword = String(body.app_password || '').trim();
     if (!identifier || !appPassword) return json({ error: 'bluesky_credentials_required' }, 400);
 
-    const auth = await fetch('https://bsky.social/xrpc/com.atproto.server.createSession', {
+    const auth = await fetchWithTimeout('https://bsky.social/xrpc/com.atproto.server.createSession', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ identifier, password: appPassword }),

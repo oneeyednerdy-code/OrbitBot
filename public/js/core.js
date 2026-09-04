@@ -1,7 +1,20 @@
-export const state={me:null,guilds:[],guildId:null,bundle:null,page:'overview',csrf:''};
+export const state={me:null,guilds:[],guildId:null,bundle:null,page:'overview',csrf:'',renderVersion:0};
 export const clientDiagnostics={errors:[],networkFailures:[],requests:[]};
 export const $=selector=>document.querySelector(selector);
 export const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+let pageController=null;
+
+export function beginPageRender(){
+  pageController?.abort();
+  pageController=new AbortController();
+  state.renderVersion+=1;
+}
+
+export function cancelPageRender(){
+  pageController?.abort();
+  pageController=null;
+  state.renderVersion+=1;
+}
 const clean=value=>String(value??'')
   .replace(/Bearer\s+\S+/gi,'Bearer [REDACTED]')
   .replace(/(token|secret|password|cookie|authorization|credential|client_secret|code_verifier)=\S+/gi,'$1=[REDACTED]')
@@ -16,12 +29,15 @@ export async function api(url,options={}){
   if((init.method||'GET')!=='GET'&&state.csrf)init.headers.set('x-orby-csrf',state.csrf);
   const endpoint=new URL(url,location.origin).pathname;
   const method=init.method||'GET';
-  const pageScoped=method==='GET'&&endpoint.startsWith('/api/guilds/')&&!endpoint.endsWith('/bootstrap')&&!endpoint.endsWith('/diagnostics');
+  const pageScoped=method==='GET'&&endpoint.startsWith('/api/guilds/')&&!endpoint.endsWith('/bootstrap');
   const requestPage=pageScoped?state.page:null;
   const requestGuild=pageScoped?state.guildId:null;
+  const requestRenderVersion=pageScoped?state.renderVersion:null;
+  if(pageScoped&&!init.signal&&pageController)init.signal=pageController.signal;
   const started=performance.now();
   let response;
   try{response=await fetch(url,init)}catch(error){
+    if(error?.name==='AbortError'){const stale=new Error('stale_navigation');stale.name='AbortError';throw stale;}
     const item={endpoint,method,error:clean(error.message),duration_ms:Math.round(performance.now()-started),time:Date.now()};
     clientDiagnostics.networkFailures.push(item);clientDiagnostics.networkFailures=clientDiagnostics.networkFailures.slice(-50);
     clientDiagnostics.requests.push({...item,status:0,ok:false});clientDiagnostics.requests=clientDiagnostics.requests.slice(-100);
@@ -29,7 +45,7 @@ export async function api(url,options={}){
   }
   let body={};let raw='';
   try{raw=await response.text();body=raw?JSON.parse(raw):{}}catch{body=raw?{raw:clean(raw)}:{}};
-  if(pageScoped&&(requestPage!==state.page||requestGuild!==state.guildId)){const stale=new Error('stale_navigation');stale.name='AbortError';throw stale;}
+  if(pageScoped&&(requestPage!==state.page||requestGuild!==state.guildId||requestRenderVersion!==state.renderVersion)){const stale=new Error('stale_navigation');stale.name='AbortError';throw stale;}
   const requestId=response.headers.get('x-orbit-request-id')||body?.request_id||null;
   const record={endpoint,method,status:response.status,ok:response.ok,duration_ms:Math.round(performance.now()-started),request_id:requestId,response:response.ok?undefined:cleanPayload(body),time:Date.now()};
   clientDiagnostics.requests.push(record);clientDiagnostics.requests=clientDiagnostics.requests.slice(-100);

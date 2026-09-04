@@ -79,3 +79,18 @@ test('Welcome messages can be tested and log Discord delivery failures',async()=
   assert.match(service,/welcome_message_failed/);
   assert.match(ui,/Send Test Welcome/);
 });
+
+test('Discord Audit Feed is opt-in, queued, redacted, and retry-safe',async()=>{
+  const audit=await readFile(new URL('../src/repositories/audit.ts',import.meta.url),'utf8');
+  const dispatch=await readFile(new URL('../src/modules/logs/dispatch.ts',import.meta.url),'utf8');
+  const logs=await readFile(new URL('../src/modules/logs/api.ts',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../public/js/pages/diagnostics.js',import.meta.url),'utf8');
+  assert.match(audit,/post_audit_events/);
+  assert.match(audit,/audit-log-dispatch/);
+  assert.match(dispatch,/discord_log_lease_until/);
+  assert.match(dispatch,/SAFE_DETAIL_KEYS/);
+  assert.match(dispatch,/Full sanitized entry: Orbit → Logs/);
+  assert.match(logs,/test_feed/);
+  assert.match(ui,/Post every new Orbit audit event/);
+  assert.doesNotMatch(dispatch,/event\.details\}/);
+});

@@ -16,8 +16,13 @@ export async function rolesApi(request:Request,env:Env,guildId:string,actorId:st
   if(request.method==='GET'){
     const id=Number(new URL(request.url).searchParams.get('id'));
     if(id)return loadPanelForEdit(env,guildId,id);
-    const panels=await env.DB.prepare('SELECT * FROM role_panels WHERE guild_id=? ORDER BY created_at DESC').bind(guildId).all<any>();
-    for(const panel of panels.results)panel.items=(await env.DB.prepare('SELECT * FROM role_panel_items WHERE panel_id=? ORDER BY sort_order,id').bind(panel.id).all<any>()).results;
+    const [panels,items]=await Promise.all([
+      env.DB.prepare('SELECT * FROM role_panels WHERE guild_id=? ORDER BY created_at DESC').bind(guildId).all<any>(),
+      env.DB.prepare('SELECT i.* FROM role_panel_items i JOIN role_panels p ON p.id=i.panel_id WHERE p.guild_id=? ORDER BY i.panel_id,i.sort_order,i.id').bind(guildId).all<any>(),
+    ]);
+    const byPanel=new Map<number,any[]>();
+    for(const item of items.results){const panelId=Number(item.panel_id),list=byPanel.get(panelId)||[];list.push(item);byPanel.set(panelId,list);}
+    for(const panel of panels.results)panel.items=byPanel.get(Number(panel.id))||[];
     return json({panels:panels.results});
   }
   if(request.method==='POST'){
@@ -67,7 +72,7 @@ async function createPanel(body:any,env:Env,guildId:string,actorId:string):Promi
   const type=body.interaction_type==='select'?'select':'button',now=Date.now();
   const inserted=await env.DB.prepare('INSERT INTO role_panels(guild_id,channel_id,name,interaction_type,config_json,enabled,created_by,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(guildId,channelId,name,type,JSON.stringify({template_key:body.template_key||null,message}),1,actorId,now,now).run();
   const panelId=Number(inserted.meta.last_row_id);
-  for(let index=0;index<items.length;index++){const item=items[index];await env.DB.prepare('INSERT INTO role_panel_items(panel_id,role_id,label,emoji,sort_order) VALUES(?,?,?,?,?)').bind(panelId,item.role_id,item.label,item.emoji,index).run();}
+  await env.DB.batch(items.map((item,index)=>env.DB.prepare('INSERT INTO role_panel_items(panel_id,role_id,label,emoji,sort_order) VALUES(?,?,?,?,?)').bind(panelId,item.role_id,item.label,item.emoji,index)));
   const components=panelComponents(panelId,type,items);
   const sent=await discord(env,`/channels/${channelId}/messages`,{method:'POST',body:JSON.stringify({content:message,components,allowed_mentions:{parse:[]}})});
   if(sent.ok){const discordMessage=await sent.json<any>();await env.DB.prepare('UPDATE role_panels SET message_id=? WHERE id=?').bind(discordMessage.id,panelId).run();await audit(env,guildId,null,'role_panel_created',{panel_id:panelId,channel_id:channelId,message_id:discordMessage.id,role_count:items.length},actorId);return json({ok:true,panel_id:panelId,message_id:discordMessage.id});}
@@ -97,6 +102,7 @@ async function updatePanel(body:any,env:Env,guildId:string,actorId:string):Promi
   if(!Number.isInteger(panelId)||panelId<1)return json({error:'invalid_panel',detail:'Choose an existing panel to edit.'},400);
   const panel=await env.DB.prepare('SELECT * FROM role_panels WHERE id=? AND guild_id=?').bind(panelId,guildId).first<any>();
   if(!panel)return json({error:'panel_not_found',detail:'That role panel no longer exists.'},404);
+  const previousItems=(await env.DB.prepare('SELECT role_id,label,emoji,sort_order FROM role_panel_items WHERE panel_id=? ORDER BY sort_order,id').bind(panelId).all<any>()).results;
   const name=String(body.name||'').trim().slice(0,80),channelId=String(body.channel_id||panel.channel_id),message=String(body.message||'');
   if(!name||!message||!Array.isArray(body.items))return json({error:'invalid_panel',detail:'Choose a name, message, and at least one role.'},400);
   if(channelId!==String(panel.channel_id))return json({error:'panel_channel_locked',detail:'An existing panel stays in its original channel. Delete and recreate it to move it.'},400);
@@ -126,7 +132,16 @@ async function updatePanel(body:any,env:Env,guildId:string,actorId:string):Promi
   const config={...parseConfig(panel.config_json),message};
   const statements=[env.DB.prepare('UPDATE role_panels SET message_id=?,name=?,interaction_type=?,config_json=?,updated_at=? WHERE id=? AND guild_id=?').bind(messageId,name,type,JSON.stringify(config),Date.now(),panelId,guildId),env.DB.prepare('DELETE FROM role_panel_items WHERE panel_id=?').bind(panelId)];
   for(let index=0;index<items.length;index++){const item=items[index];statements.push(env.DB.prepare('INSERT INTO role_panel_items(panel_id,role_id,label,emoji,sort_order) VALUES(?,?,?,?,?)').bind(panelId,item.role_id,item.label,item.emoji,index));}
-  await env.DB.batch(statements);
+  try{await env.DB.batch(statements);}
+  catch(error){
+    if(replaced&&messageId)await discord(env,`/channels/${channelId}/messages/${messageId}`,{method:'DELETE'}).catch(()=>null);
+    else if(messageId){
+      const previousConfig=parseConfig(panel.config_json),previousMessage=String(previousConfig.message||`**${panel.name}**\nChoose the roles you want.`),previousComponents=panelComponents(panelId,String(panel.interaction_type||'button'),previousItems);
+      await discord(env,`/channels/${channelId}/messages/${messageId}`,{method:'PATCH',body:JSON.stringify({content:previousMessage,components:previousComponents,allowed_mentions:{parse:[]}})}).catch(()=>null);
+    }
+    const requestId=await recordSystemError(env,guildId,'/api/guilds/:guild/roles','POST',500,'role_panel_database_update_failed',{panel_id:panelId,message:error instanceof Error?error.message:String(error),discord_compensation_attempted:true});
+    return json({error:'role_panel_database_update_failed',detail:'Discord was updated, but Orbit could not save the panel. Orbit attempted to restore the previous Discord panel.',request_id:requestId},500);
+  }
   await audit(env,guildId,null,'role_panel_updated',{panel_id:panelId,channel_id:channelId,message_id:messageId,role_count:items.length,replaced_missing_message:replaced},actorId);
   return json({ok:true,panel_id:panelId,message_id:messageId,replaced_missing_message:replaced});
 }

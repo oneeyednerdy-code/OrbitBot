@@ -6,10 +6,13 @@ import { sha256 } from '../security/crypto';
 import { recordMessageAndCheckHoneypot } from '../modules/moderation/honeypot';
 import { awardMessageXp } from '../modules/leveling/service';
 import { runAutomations } from '../modules/automation/engine';
+import { shouldHandleAutomationMessage } from '../modules/automation/policy.js';
 import { handleCommunityMessage, handleMemberAdd, handleMemberRemove } from '../modules/community/service';
 import { shieldMemberJoin, shieldMessage } from '../modules/shield/service';
 
-const GATEWAY_IMPLEMENTATION = 'alpha37-safe-gateway-v2';
+const GATEWAY_IMPLEMENTATION = 'alpha56-supervised-gateway-v3';
+const GATEWAY_INTENTS = 33283;
+const GATEWAY_INTENT_MANIFEST = ['GUILDS', 'GUILD_MEMBERS', 'GUILD_MESSAGES', 'MESSAGE_CONTENT'];
 const IDENTIFY_BUDGET_FLOOR = 5;
 const FORCE_RETRY_COOLDOWN_MS = 5 * 60_000;
 const MAX_RECONNECT_DELAY_MS = 15 * 60_000;
@@ -42,6 +45,10 @@ type PersistedGatewayState = {
   session_start_remaining?: number | null;
   session_start_total?: number | null;
   session_start_reset_at?: number | null;
+  intents?: number;
+  last_heartbeat_at?: number | null;
+  last_heartbeat_ack_at?: number | null;
+  heartbeat_misses?: number;
 };
 
 export class DiscordGateway extends DurableObject<Env> {
@@ -64,6 +71,9 @@ export class DiscordGateway extends DurableObject<Env> {
   private sessionStartRemaining: number | null = null;
   private sessionStartTotal: number | null = null;
   private sessionStartResetAt: number | null = null;
+  private lastHeartbeatAt: number | null = null;
+  private lastHeartbeatAckAt: number | null = null;
+  private heartbeatMisses = 0;
   private tokenFingerprint = '';
   private hydrated = false;
   private connectGeneration = 0;
@@ -149,6 +159,9 @@ export class DiscordGateway extends DurableObject<Env> {
     this.sessionStartRemaining = saved.session_start_remaining ?? null;
     this.sessionStartTotal = saved.session_start_total ?? null;
     this.sessionStartResetAt = saved.session_start_reset_at ?? null;
+    this.lastHeartbeatAt = saved.last_heartbeat_at ?? null;
+    this.lastHeartbeatAckAt = saved.last_heartbeat_ack_at ?? null;
+    this.heartbeatMisses = saved.heartbeat_misses ?? 0;
     this.hydrated = true;
   }
 
@@ -169,6 +182,10 @@ export class DiscordGateway extends DurableObject<Env> {
       session_start_remaining: this.sessionStartRemaining,
       session_start_total: this.sessionStartTotal,
       session_start_reset_at: this.sessionStartResetAt,
+      intents: GATEWAY_INTENTS,
+      last_heartbeat_at: this.lastHeartbeatAt,
+      last_heartbeat_ack_at: this.lastHeartbeatAckAt,
+      heartbeat_misses: this.heartbeatMisses,
     };
     await this.ctx.storage.put('gateway_state', state);
   }
@@ -190,6 +207,11 @@ export class DiscordGateway extends DurableObject<Env> {
       session_start_remaining: this.sessionStartRemaining,
       session_start_total: this.sessionStartTotal,
       session_start_reset_at: this.sessionStartResetAt,
+      intents: GATEWAY_INTENTS,
+      intent_manifest: GATEWAY_INTENT_MANIFEST,
+      last_heartbeat_at: this.lastHeartbeatAt,
+      last_heartbeat_ack_at: this.lastHeartbeatAckAt,
+      heartbeat_misses: this.heartbeatMisses,
       resumable_session: Boolean(this.sessionId && this.resumeGatewayUrl && this.sequence != null),
     };
   }
@@ -321,6 +343,9 @@ export class DiscordGateway extends DurableObject<Env> {
 
     if (packet.op === 11) {
       this.heartbeatAcked = true;
+      this.lastHeartbeatAckAt = Date.now();
+      this.heartbeatMisses = 0;
+      await this.persist();
       return;
     }
 
@@ -376,11 +401,14 @@ export class DiscordGateway extends DurableObject<Env> {
         await recordMessageAndCheckHoneypot(this.env, packet.d);
         await awardMessageXp(this.env, packet.d);
         await handleCommunityMessage(this.env, packet.d);
-        await runAutomations(this.env, packet.d.guild_id, 'message_create', {
-          user_id: packet.d.author?.id,
-          channel_id: packet.d.channel_id,
-          role_ids: packet.d.member?.roles || [],
-        });
+        if (shouldHandleAutomationMessage(packet.d)) {
+          await runAutomations(this.env, packet.d.guild_id, 'message_create', {
+            event_id: packet.d.id,
+            user_id: packet.d.author.id,
+            channel_id: packet.d.channel_id,
+            role_ids: packet.d.member?.roles || [],
+          });
+        }
       }
       if (packet.t === 'GUILD_MEMBER_ADD') {
         try { await shieldMemberJoin(this.env, packet.d); }
@@ -406,7 +434,7 @@ export class DiscordGateway extends DurableObject<Env> {
       op: 2,
       d: {
         token: this.env.DISCORD_BOT_TOKEN,
-        intents: 33283,
+        intents: GATEWAY_INTENTS,
         properties: { os: 'linux', browser: 'orbit', device: 'orbit' },
       },
     });
@@ -433,11 +461,16 @@ export class DiscordGateway extends DurableObject<Env> {
   private sendHeartbeat(generation: number, ws: WebSocket): void {
     if (generation !== this.connectGeneration || this.socket !== ws || ws.readyState !== WebSocket.OPEN) return;
     if (!this.heartbeatAcked) {
+      this.heartbeatMisses += 1;
+      this.lastHeartbeatAt = Date.now();
+      this.ctx.waitUntil(this.persist());
       this.closeDisposition = this.canResume() ? 'resume' : 'identify';
       try { ws.close(4000, 'heartbeat ack timeout'); } catch {}
       return;
     }
     this.heartbeatAcked = false;
+    this.lastHeartbeatAt = Date.now();
+    this.ctx.waitUntil(this.persist());
     this.send({ op: 1, d: this.sequence });
     this.scheduleHeartbeat(false, generation, ws);
   }

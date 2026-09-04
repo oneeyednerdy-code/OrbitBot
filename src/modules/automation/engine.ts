@@ -1,10 +1,65 @@
 import type { Env } from '../../types';
-import { addRole, removeRole, discord } from '../../discord/client';
+import { addRole, discord, removeRole } from '../../discord/client';
 import { audit } from '../../repositories/audit';
-export async function runAutomations(env:Env,guildId:string,triggerType:string,ctx:any):Promise<void>{
- const sec=await env.DB.prepare('SELECT lockdown_active FROM security_configs WHERE guild_id=?').bind(guildId).first<any>();if(sec?.lockdown_active)return;
- const rows=(await env.DB.prepare('SELECT * FROM automations WHERE guild_id=? AND enabled=1').bind(guildId).all<any>()).results;for(const row of rows){const trigger=parse(row.trigger_json,{});if(trigger.type!==triggerType)continue;const conditions=parse(row.conditions_json,[]);if(!conditions.every((c:any)=>matches(c,ctx)))continue;const actions=parse(row.actions_json,[]);let ok=true;const results:any[]=[];for(const action of actions.slice(0,10)){try{results.push(await execute(env,guildId,action,ctx));}catch(e){ok=false;results.push({error:String(e)});}}await env.DB.prepare('INSERT INTO automation_runs(automation_id,guild_id,trigger_type,status,detail_json,ran_at) VALUES(?,?,?,?,?,?)').bind(row.id,guildId,triggerType,ok?'success':'partial',JSON.stringify(results),Date.now()).run();await audit(env,guildId,ctx.user_id||null,'automation_run',{automation_id:row.id,trigger_type:triggerType,status:ok?'success':'partial'});}
+import { automationConditionMatches, discordActionSucceeded } from './policy.js';
+
+type AutomationContext={event_id?:string;user_id?:string;channel_id?:string;role_ids?:string[]};
+type AutomationAction={type?:string;channel_id?:string;content?:string;user_id?:string;role_id?:string};
+
+export async function runAutomations(env:Env,guildId:string,triggerType:string,context:AutomationContext):Promise<void>{
+  if(!guildId||!context.user_id)return;
+  const security=await env.DB.prepare('SELECT lockdown_active FROM security_configs WHERE guild_id=?').bind(guildId).first<{lockdown_active?:number}>();
+  if(security?.lockdown_active)return;
+
+  const rows=(await env.DB.prepare('SELECT id,trigger_json,conditions_json,actions_json FROM automations WHERE guild_id=? AND enabled=1').bind(guildId).all<any>()).results;
+  for(const row of rows){
+    const trigger=parse(row.trigger_json,{});
+    if(trigger.type!==triggerType)continue;
+    const conditions=parse(row.conditions_json,[]);
+    if(!Array.isArray(conditions)||!conditions.every(condition=>automationConditionMatches(condition,context)))continue;
+    const actions=parse(row.actions_json,[]);
+    if(!Array.isArray(actions)||actions.length===0)continue;
+
+    let ok=true;
+    const results:Array<Record<string,unknown>>=[];
+    for(const action of actions.slice(0,10)){
+      try{results.push(await execute(env,guildId,action,context));}
+      catch(error){ok=false;results.push({type:String(action?.type||'unknown'),error:error instanceof Error?error.message:String(error)});}
+    }
+    const status=ok?'success':'partial';
+    await env.DB.prepare('INSERT INTO automation_runs(automation_id,guild_id,trigger_type,status,detail_json,ran_at) VALUES(?,?,?,?,?,?)')
+      .bind(row.id,guildId,triggerType,status,JSON.stringify({event_id:context.event_id||null,results}),Date.now()).run();
+    await audit(env,guildId,context.user_id,'automation_run',{automation_id:row.id,trigger_type:triggerType,status});
+  }
 }
-function matches(c:any,ctx:any){if(c.type==='channel_is')return ctx.channel_id===c.channel_id;if(c.type==='user_is')return ctx.user_id===c.user_id;if(c.type==='has_role')return (ctx.role_ids||[]).includes(c.role_id);return true;}
-async function execute(env:Env,guildId:string,a:any,ctx:any){if(a.type==='send_message'){const channel=a.channel_id||ctx.channel_id;if(!channel)return {skipped:'no_channel'};const r=await discord(env,`/channels/${channel}/messages`,{method:'POST',body:JSON.stringify({content:String(a.content||'').slice(0,2000)})});return {type:a.type,status:r.status};}if(a.type==='add_role'){const r=await addRole(env,guildId,a.user_id||ctx.user_id,a.role_id);return {type:a.type,status:r.status};}if(a.type==='remove_role'){const r=await removeRole(env,guildId,a.user_id||ctx.user_id,a.role_id);return {type:a.type,status:r.status};}if(a.type==='ban'){const r=await discord(env,`/guilds/${guildId}/bans/${a.user_id||ctx.user_id}`,{method:'PUT',body:JSON.stringify({delete_message_seconds:0})});return {type:a.type,status:r.status};}return {skipped:'unknown_action'};}
-function parse(raw:any,fallback:any){try{return typeof raw==='string'?JSON.parse(raw):raw??fallback}catch{return fallback}}
+
+async function execute(env:Env,guildId:string,action:AutomationAction,context:AutomationContext):Promise<Record<string,unknown>>{
+  let response:Response;
+  if(action.type==='send_message'){
+    const channel=action.channel_id||context.channel_id;
+    const content=String(action.content||'').trim().slice(0,2000);
+    if(!channel||!content)throw new Error('automation_message_incomplete');
+    response=await discord(env,`/channels/${channel}/messages`,{method:'POST',body:JSON.stringify({content})});
+  }else if(action.type==='add_role'){
+    const userId=action.user_id||context.user_id;
+    if(!userId||!action.role_id)throw new Error('automation_add_role_incomplete');
+    response=await addRole(env,guildId,userId,action.role_id);
+  }else if(action.type==='remove_role'){
+    const userId=action.user_id||context.user_id;
+    if(!userId||!action.role_id)throw new Error('automation_remove_role_incomplete');
+    response=await removeRole(env,guildId,userId,action.role_id);
+  }else if(action.type==='ban'){
+    const userId=action.user_id||context.user_id;
+    if(!userId)throw new Error('automation_ban_incomplete');
+    response=await discord(env,`/guilds/${guildId}/bans/${userId}`,{method:'PUT',body:JSON.stringify({delete_message_seconds:0})});
+  }else throw new Error('automation_action_unsupported');
+
+  if(!discordActionSucceeded(response.status)){
+    let code='unknown';
+    try{const detail=await response.clone().json<any>();code=String(detail?.code||detail?.message||'unknown').slice(0,100);}catch{}
+    throw new Error(`discord_${response.status}_${code}`);
+  }
+  return {type:action.type,status:response.status};
+}
+
+function parse(raw:unknown,fallback:any):any{try{return typeof raw==='string'?JSON.parse(raw):raw??fallback}catch{return fallback}}

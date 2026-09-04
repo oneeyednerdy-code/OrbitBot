@@ -2,6 +2,7 @@ import type { Env, OrbitJob } from '../../types';
 import { discord } from '../../discord/client';
 import { audit } from '../../repositories/audit';
 import { recordSystemError } from '../../repositories/errors';
+import { fetchWithTimeout } from '../../http/fetch-timeout';
 
 type TicketJob=Extract<OrbitJob,{type:'ticket-open-dispatch'}>;
 type TicketActionJob=Extract<OrbitJob,{type:'ticket-action-dispatch'}>;
@@ -123,6 +124,6 @@ function changePermission(value:string,add:bigint,remove:bigint):string{try{retu
 async function responseDetail(response:Response):Promise<any>{try{return await response.clone().json<any>()}catch{return {}}}
 function modalValues(components:any):Record<string,string>{const values:Record<string,string>={};const visit=(component:any)=>{if(!component||typeof component!=='object')return;if(component.custom_id&&component.value!==undefined)values[String(component.custom_id)]=String(component.value||'');if(component.component)visit(component.component);if(Array.isArray(component.components))component.components.forEach(visit)};(Array.isArray(components)?components:[]).forEach(visit);return values}
 
-async function editReply(env:Env,token:string,content:string):Promise<void>{await fetch(`https://discord.com/api/v10/webhooks/${env.DISCORD_CLIENT_ID}/${encodeURIComponent(token)}/messages/@original`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({content:String(content).slice(0,2000),allowed_mentions:{parse:[]}})});}
+async function editReply(env:Env,token:string,content:string):Promise<void>{await fetchWithTimeout(`https://discord.com/api/v10/webhooks/${env.DISCORD_CLIENT_ID}/${encodeURIComponent(token)}/messages/@original`,{method:'PATCH',headers:{'content-type':'application/json'},body:JSON.stringify({content:String(content).slice(0,2000),allowed_mentions:{parse:[]}})});}
 function parse(raw:any):any[]{try{return Array.isArray(raw)?raw:JSON.parse(raw||'[]')}catch{return []}}
 function ephemeral(content:string){return {type:4,data:{content:String(content).slice(0,2000),flags:64}}}

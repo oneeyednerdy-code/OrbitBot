@@ -5,7 +5,10 @@ import { recordSystemError } from '../../repositories/errors';
 
 export async function eventsApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method === 'GET') {
-    const rows = await env.DB.prepare('SELECT * FROM community_events WHERE guild_id=? ORDER BY starts_at ASC').bind(guildId).all();
+    const rows = await env.DB.prepare(`SELECT e.*,
+      (SELECT COUNT(*) FROM event_signups s WHERE s.event_id=e.id AND s.status='going') AS going_count,
+      (SELECT COUNT(*) FROM event_signups s WHERE s.event_id=e.id AND s.status='maybe') AS maybe_count
+      FROM community_events e WHERE e.guild_id=? ORDER BY e.starts_at ASC`).bind(guildId).all();
     return json({ events: rows.results });
   }
 
@@ -52,13 +55,27 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
     const result = await env.DB.prepare(`INSERT INTO community_events(guild_id,name,description,starts_at,ends_at,discord_channel_id,ping_role_id,signup_limit,discord_event_id,status,created_by,created_at,updated_at,recurrence_rule_json)
       VALUES(?,?,?,?,?,?,?,?,?,'scheduled',?,?,?,?)`)
       .bind(guildId, body.name, body.description || null, startMs, body.ends_at ? endMs : null, body.discord_channel_id || null, body.ping_role_id || null, Number(body.signup_limit) || null, discordEventId, actorId, now, now, recurrenceRule ? JSON.stringify({ preset: repeat, discord: recurrenceRule }) : null).run();
-    return json({ ok: true, id: Number(result.meta.last_row_id), discord_event_id: discordEventId });
+    const eventId = Number(result.meta.last_row_id);
+    let rsvpPanelPosted = false;
+    let rsvpPanelWarning: string | null = null;
+    if (body.discord_channel_id && body.post_rsvp_panel !== false) {
+      try {
+        const response = await postRsvpPanel(env, guildId, eventId, body);
+        if (!response.ok) rsvpPanelWarning = `Discord returned HTTP ${response.status} while posting the RSVP panel.`;
+        else {
+          const message = await response.json<any>();
+          await env.DB.prepare('UPDATE community_events SET event_message_id=?,updated_at=? WHERE id=? AND guild_id=?').bind(String(message.id), Date.now(), eventId, guildId).run();
+          rsvpPanelPosted = true;
+        }
+      } catch { rsvpPanelWarning = 'Orbit saved the event, but could not post its RSVP panel.'; }
+    }
+    return json({ ok: true, id: eventId, discord_event_id: discordEventId, rsvp_panel_posted: rsvpPanelPosted, warning: rsvpPanelWarning });
   }
 
   if (request.method === 'DELETE') {
     const id = Number(new URL(request.url).searchParams.get('id'));
     if (!Number.isFinite(id)) return json({ error: 'invalid_event_id' }, 400);
-    const event = await env.DB.prepare('SELECT id,discord_event_id FROM community_events WHERE id=? AND guild_id=?').bind(id, guildId).first<any>();
+    const event = await env.DB.prepare('SELECT id,discord_event_id,event_message_id,discord_channel_id FROM community_events WHERE id=? AND guild_id=?').bind(id, guildId).first<any>();
     if (!event) return json({ error: 'event_not_found' }, 404);
     if (event.discord_event_id) {
       const response = await discord(env, `/guilds/${guildId}/scheduled-events/${event.discord_event_id}`, { method: 'DELETE' });
@@ -68,10 +85,31 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
         return json({ error: 'discord_event_delete_failed', status: response.status, detail: details.message || 'Discord would not remove the scheduled event.', request_id: requestId }, 400);
       }
     }
+    if (event.event_message_id && event.discord_channel_id) {
+      const response = await discord(env, `/channels/${event.discord_channel_id}/messages/${event.event_message_id}`, { method: 'DELETE' });
+      if (!response.ok && response.status !== 404) await recordSystemError(env, guildId, '/channels/:channel/messages/:message', 'DELETE', response.status, 'event_rsvp_panel_delete_failed', { event_id: id });
+    }
     await env.DB.prepare('DELETE FROM community_events WHERE id=? AND guild_id=?').bind(id, guildId).run();
     return json({ ok: true });
   }
   return json({ error: 'method_not_allowed' }, 405);
+}
+
+async function postRsvpPanel(env: Env, guildId: string, eventId: number, body: any): Promise<Response> {
+  const roleId = String(body.ping_role_id || '');
+  const mention = /^\d+$/.test(roleId) ? `<@&${roleId}> ` : '';
+  return discord(env, `/channels/${String(body.discord_channel_id)}/messages`, {
+    method: 'POST',
+    body: JSON.stringify({
+      content: `${mention}**${String(body.name).slice(0, 100)}**\n${String(body.description || 'Join the community event!').slice(0, 1000)}\nStarts <t:${Math.floor(Number(body.starts_at) / 1000)}:F>`,
+      allowed_mentions: roleId ? { parse: [], roles: [roleId] } : { parse: [] },
+      components: [{ type: 1, components: [
+        { type: 2, style: 3, label: 'I’m In', custom_id: `orbit_event_rsvp:${eventId}:going` },
+        { type: 2, style: 2, label: 'Maybe', custom_id: `orbit_event_rsvp:${eventId}:maybe` },
+        { type: 2, style: 4, label: 'Can’t Go', custom_id: `orbit_event_rsvp:${eventId}:declined` },
+      ] }],
+    }),
+  });
 }
 
 function normalizeRepeat(value: unknown): 'daily'|'weekly'|'biweekly'|'monthly'|null {

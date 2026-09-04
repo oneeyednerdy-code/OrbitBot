@@ -11,7 +11,7 @@ export function nextRun(from,rule,timeZone){
     target={...parts,year,month,day:Math.min(parts.day,lastDay)};
   }else{
     const local=new Date(Date.UTC(parts.year,parts.month-1,parts.day,parts.hour,parts.minute,parts.second));
-    local.setUTCDate(local.getUTCDate()+(rule==='weekly'?7:1));
+    local.setUTCDate(local.getUTCDate()+(rule==='weekly'?7:rule==='biweekly'?14:1));
     target={year:local.getUTCFullYear(),month:local.getUTCMonth()+1,day:local.getUTCDate(),hour:local.getUTCHours(),minute:local.getUTCMinutes(),second:local.getUTCSeconds()};
   }
   return localPartsToUtc(target,zone);

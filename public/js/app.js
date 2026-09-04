@@ -1,11 +1,14 @@
-import { $, api, escapeHtml, state } from './core.js';
+import { $, api, cancelPageRender, escapeHtml, state } from './core.js';
 import { renderError, renderGuildAuthorizationError, renderInstallNeeded, renderLoading, renderNoServers, renderPage } from './pages.js';
 import { initDiagnosticsDrawer, refreshDiagnostics } from './diagnostics-drawer.js';
+import { ORBIT_VERSION } from './version.js';
+
+document.querySelectorAll('[data-orbit-version]').forEach(element=>{element.textContent=element.dataset.orbitPrefix==='name'?`Orbit v${ORBIT_VERSION}`:`v${ORBIT_VERSION}`;if(element.classList.contains('version-badge'))element.setAttribute('aria-label',`Orbit version ${ORBIT_VERSION}`)});
 
 const pageFeatures={
   moderation:'protection',shield:'protection',verification:'protection',security:'protection',safety:'protection',logs:'protection',
   creator:'alerts',tickets:'tickets',roles:'roles',scheduler:'scheduler',leveling:'leveling',kofi:'kofi',automation:'automation',social:'social',
-  directory:'creator_community',events:'creator_community',community:'creator_community',applications:'creator_community',health:'creator_community',operations:'creator_community'
+  directory:'creator_community',events:'creator_community',community:'creator_community','community-engagement':'creator_community',applications:'creator_community',health:'creator_community',operations:'creator_community'
 };
 
 async function boot(){
@@ -19,7 +22,7 @@ async function boot(){
 }
 function renderServerPicker(){const picker=$('#serverPicker');picker.innerHTML='<option value="">Select a server</option>'+state.guilds.map(g=>`<option value="${g.id}">${escapeHtml(g.name)}</option>`).join('');picker.addEventListener('change',()=>picker.value&&selectGuild(picker.value));}
 async function selectGuild(guildId){
-  state.guildId=guildId;$('#serverPicker').value=guildId;renderLoading();
+  cancelPageRender();state.guildId=guildId;$('#serverPicker').value=guildId;renderLoading();
   try{
     state.bundle=await api(`/api/guilds/${guildId}/bootstrap`);$('#installTop').href=`/oauth/install?guild_id=${guildId}`;
     applyAdaptiveNavigation();
@@ -38,7 +41,7 @@ function applyAdaptiveNavigation(){
   const manager=$('[data-page="channel-manager"]');if(manager)manager.classList.toggle('hidden',!state.bundle?.guild?.owner);
 }
 function wireNavigation(){
-  document.addEventListener('click',event=>{const link=event.target.closest('[data-page]');if(!link)return;event.preventDefault();const page=link.dataset.page;if(!pageAllowed(page)||page===state.page)return;state.page=page;history.replaceState(null,'',`#${state.page}`);setActiveNav();showPageTransition(page);$('#sidebar').classList.remove('open');requestAnimationFrame(()=>requestAnimationFrame(()=>{if(state.page===page)renderPage()}));});
+  document.addEventListener('click',event=>{const link=event.target.closest('[data-page]');if(!link)return;event.preventDefault();const page=link.dataset.page;if(!pageAllowed(page)||page===state.page)return;cancelPageRender();state.page=page;history.replaceState(null,'',`#${state.page}`);setActiveNav();showPageTransition(page);$('#sidebar').classList.remove('open');requestAnimationFrame(()=>requestAnimationFrame(()=>{if(state.page===page)renderPage()}));});
   $('#menu').addEventListener('click',()=>$('#sidebar').classList.toggle('open'));
   window.addEventListener('orbit-features-changed',()=>{applyAdaptiveNavigation();setActiveNav()});
   const hash=location.hash.slice(1);if(hash)state.page=hash;setActiveNav();

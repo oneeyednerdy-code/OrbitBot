@@ -2,10 +2,12 @@ import type { Env } from '../../types';
 import { discord } from '../../discord/client';
 import { audit } from '../../repositories/audit';
 import { recordSystemError } from '../../repositories/errors';
+import { updateActionJob } from '../../repositories/action-jobs';
 
 export async function dispatchChannelManagerJob(env:Env,jobId:number):Promise<void>{
   const now=Date.now();const claim=await env.DB.prepare("UPDATE channel_manager_jobs SET status='running',started_at=COALESCE(started_at,?),lease_expires_at=?,heartbeat_at=?,attempt_count=attempt_count+1 WHERE id=? AND (status='queued' OR (status='running' AND COALESCE(lease_expires_at,0)<=?))").bind(now,now+5*60_000,now,jobId,now).run();if(!claim.meta.changes)return;
   const job=await env.DB.prepare('SELECT * FROM channel_manager_jobs WHERE id=?').bind(jobId).first<any>();if(!job)return;
+  await safeActionUpdate(env, job.action_job_id, { status:'running', started:true, attemptCount:Number(job.attempt_count||1), progress:{ total:Number(job.total_items||0), completed:0, failed:0, operation:job.operation } });
   if(Number(job.attempt_count||0)>1)await env.DB.prepare("UPDATE channel_manager_job_items SET status='failed',error_code='uncertain_after_worker_retry',completed_at=? WHERE job_id=? AND status='running'").bind(now,jobId).run();
   let failures:any[]=[];
   try{
@@ -19,6 +21,7 @@ export async function dispatchChannelManagerJob(env:Env,jobId:number):Promise<vo
   const counts=await env.DB.prepare("SELECT SUM(CASE WHEN status='completed' THEN 1 ELSE 0 END) completed,SUM(CASE WHEN status='failed' THEN 1 ELSE 0 END) failed FROM channel_manager_job_items WHERE job_id=?").bind(jobId).first<any>();
   const completed=Number(counts?.completed||0),failed=Number(counts?.failed||0),status=(failed||failures.length)?(completed?'partial':'failed'):'completed';
   await env.DB.prepare('UPDATE channel_manager_jobs SET status=?,completed_items=?,failed_items=?,error_summary_json=?,lease_expires_at=NULL,heartbeat_at=?,finished_at=? WHERE id=?').bind(status,completed,failed,JSON.stringify(failures.slice(0,100)),Date.now(),Date.now(),jobId).run();
+  await safeActionUpdate(env, job.action_job_id, { status:status as any, finished:true, progress:{ total:Number(job.total_items||0), completed, failed, operation:job.operation }, errorCode:failures[0]?.error || null, requestId:failures[0]?.request_id || null });
   await audit(env,job.guild_id,null,`channel_manager_${job.operation}_${status}`,{job_id:jobId,completed,failed,reason:job.reason},job.created_by);
 }
 
@@ -89,3 +92,4 @@ async function failLocal(env:Env,row:any,code:string,detail:string):Promise<any>
 async function failItem(env:Env,job:any,row:any,response:Response,code:string):Promise<any>{let detail:any={};try{detail=await response.clone().json<any>()}catch{}const requestId=await recordSystemError(env,job.guild_id,'channel-manager/discord',job.operation==='delete'?'DELETE':'POST',response.status,code,detail);await finishItem(env,row.id,'failed',String(detail?.code||code),requestId,null);return {item_id:row.id,name:row.name,status:response.status,discord_code:detail?.code||null,error:code,detail:detail?.message||`Discord returned HTTP ${response.status}.`,request_id:requestId}}
 function auditHeader(reason:string):Headers{const headers=new Headers();headers.set('X-Audit-Log-Reason',encodeURIComponent(`Orbit Channel Manager: ${String(reason||'Owner operation').slice(0,400)}`));return headers}
 function parse(raw:string):any{try{return JSON.parse(raw)}catch{return {}}}
+async function safeActionUpdate(env:Env,actionJobId:number|undefined,update:any):Promise<void>{try{await updateActionJob(env,actionJobId,update)}catch{}}

@@ -1,11 +1,11 @@
-# Orbit Feature Set — alpha.31 unified build
+# Orbit Feature Set — alpha.56 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
 - Server picker and online bot installation
 - Modular backend and split frontend page modules
 - D1 migration system
-- Diagnostics, audit logs and security-oriented error reporting
+- Diagnostics, audit logs, security-oriented error reporting, and an opt-in queued Discord Audit Feed
 
 ## Verification & Roles
 - Discord OAuth dashboard authorization
@@ -28,6 +28,9 @@
 - Auto-role
 - Custom commands
 - Sticky messages
+- Community Engagement question prompts with daily, weekly, every-two-weeks, and monthly cadence
+- Uploadable one-question-per-line `.txt` banks with persistent duplicate prevention
+- Bundled Gamer, Pop Culture, Nerd, Twitch Streamer, Tabletop RPG, Sci-Fi/Fantasy, Horror, and Anime/Comics sample banks selectable from the dashboard
 - Editable category-driven support tickets with staff roles and Discord modal questions
 - Reason-required close (retain + lock) and staff-only delete workflows
 - Ticket claiming/routing/transcript foundation
@@ -36,7 +39,7 @@
 
 ## Engagement
 - Message XP
-- Level rewards and leaderboard foundation
+- Current Level reward inventory, edit-in-place rewards, and leaderboard
 - Automation engine using triggers/conditions/actions
 
 ## Publishing
@@ -56,7 +59,9 @@
 ## Events & Operations
 - Community event management
 - Native Discord Scheduled Event creation
+- RSVP panels with Going / Maybe / Can't Go buttons, signup limits, and guild-scoped counts
 - Operations Center with live creators, open tickets, queued posts, upcoming events, pending applications, moderation activity, Shield and Lockdown status
+- Reliability Control Plane with Permission Doctor, role hierarchy checks, missing-resource drift, rate-limit buckets, gateway heartbeat state, and Action Center history
 
 ## Roadmap still intentionally not claimed as complete
 - Instagram publishing

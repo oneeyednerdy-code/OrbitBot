@@ -1,4 +1,4 @@
-import { state } from './core.js';
+import { beginPageRender, state } from './core.js';
 import { renderLoading, renderError, renderNoServers, renderInstallNeeded, renderGuildAuthorizationError } from './pages/common.js';
 import { renderOverview } from './pages/overview.js';
 import { renderVerification } from './pages/verification.js';
@@ -11,6 +11,7 @@ import { renderScheduler } from './pages/scheduler.js';
 import { renderLeveling } from './pages/leveling.js';
 import { renderAutomation } from './pages/automation.js';
 import { renderCommunity } from './pages/community.js';
+import { renderCommunityEngagement } from './pages/community-engagement.js';
 import { renderKofi } from './pages/kofi.js';
 import { renderCreator } from './pages/creator.js';
 import { renderSocial } from './pages/social.js';
@@ -32,6 +33,7 @@ export { renderLoading, renderError, renderNoServers, renderInstallNeeded, rende
 
 export function renderPage(){
   if(!state.bundle){if(!state.guildId)renderNoServers();return}
+  beginPageRender();
   switch(state.page){
     case 'overview': return renderOverview();
     case 'verification': return renderVerification();
@@ -42,6 +44,7 @@ export function renderPage(){
     case 'leveling': return renderLeveling();
     case 'automation': return renderAutomation();
     case 'community': return renderCommunity();
+    case 'community-engagement': return renderCommunityEngagement();
     case 'kofi': return renderKofi();
     case 'creator': return renderCreator();
     case 'social': return renderSocial();

@@ -4,6 +4,7 @@ import { audit } from '../../repositories/audit';
 import { securityHeaders } from '../../security/headers';
 import { sha256 } from '../../security/crypto';
 import { evaluateCombinedAccess, notifyRoleChange } from '../access/service';
+import { fetchWithTimeout } from '../../http/fetch-timeout';
 
 export async function verificationRoute(request: Request, env: Env, token: string): Promise<Response> {
   const hash = await sha256(token);
@@ -13,7 +14,7 @@ export async function verificationRoute(request: Request, env: Env, token: strin
 
   const form = await request.formData();
   const turnstileResponse = form.get('cf-turnstile-response');
-  const siteverify = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+  const siteverify = await fetchWithTimeout('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
     method: 'POST',
     body: new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: String(turnstileResponse ?? '') }),
   });

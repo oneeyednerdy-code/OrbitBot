@@ -1,5 +1,7 @@
 import type { Env, SessionRow } from '../types';
 import { openSeal, seal } from '../security/crypto';
+import { fetchWithTimeout } from '../http/fetch-timeout';
+import { recordSystemError } from '../repositories/errors';
 
 function cookie(request: Request, name: string): string | null {
   return request.headers.get('cookie')?.split(';').map(v => v.trim()).find(v => v.startsWith(`${name}=`))?.slice(name.length + 1) ?? null;
@@ -16,14 +18,14 @@ export async function getSession(request: Request, env: Env): Promise<SessionRow
   try{
     const refreshToken=await openSeal(session.refresh_token,env.SESSION_SECRET);
     const body=new URLSearchParams({client_id:env.DISCORD_CLIENT_ID,client_secret:env.DISCORD_CLIENT_SECRET,grant_type:'refresh_token',refresh_token:refreshToken});
-    const response=await fetch('https://discord.com/api/oauth2/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body});
-    if(!response.ok)return null;
+    const response=await fetchWithTimeout('https://discord.com/api/oauth2/token',{method:'POST',headers:{'content-type':'application/x-www-form-urlencoded'},body});
+    if(!response.ok){await recordSystemError(env,null,'/oauth2/token','POST',response.status,'discord_session_refresh_failed',{discord_status:response.status,user_id:session.user_id});return null;}
     const token=await response.json<any>();
     if(!token.access_token)return null;
     const accessCipher=await seal(token.access_token,env.SESSION_SECRET),refreshCipher=token.refresh_token?await seal(token.refresh_token,env.SESSION_SECRET):session.refresh_token,expiresAt=now+Number(token.expires_in||0)*1000;
     await env.DB.prepare('UPDATE sessions SET access_token=?,refresh_token=?,oauth_scope=?,token_type=?,expires_at=? WHERE id=?').bind(accessCipher,refreshCipher,String(token.scope||session.oauth_scope||''),String(token.token_type||session.token_type||'Bearer'),expiresAt,id).run();
     return {...session,access_token:accessCipher,refresh_token:refreshCipher,oauth_scope:String(token.scope||session.oauth_scope||''),token_type:String(token.token_type||session.token_type||'Bearer'),expires_at:expiresAt};
-  }catch{return null;}
+  }catch(error){await recordSystemError(env,null,'/oauth2/token','POST',500,'discord_session_refresh_exception',{message:error instanceof Error?error.message:String(error),user_id:session.user_id});return null;}
 }
 
 export async function deleteSession(request: Request, env: Env): Promise<void> {

@@ -2,6 +2,7 @@ import type { Env } from '../../types';
 import { discord } from '../../discord/client';
 import { json } from '../../http/responses';
 import { audit } from '../../repositories/audit';
+import { createActionJob, listActionJobs } from '../../repositories/action-jobs';
 
 const STRUCTURAL_TYPES = new Set([0, 2, 4, 5, 13, 15, 16]);
 type Channel = { id:string; name:string; type:number; parent_id:string|null; position:number; topic?:string|null; nsfw?:boolean; rate_limit_per_user?:number; bitrate?:number; user_limit?:number; permission_overwrites?:any[] };
@@ -26,11 +27,11 @@ export async function channelManagerApi(request:Request,env:Env,guildId:string,a
 async function loadManager(env:Env,guildId:string):Promise<Response>{
   const [channels,guild,dependencies,jobs,snapshots]=await Promise.all([
     getChannels(env,guildId),getDiscordGuild(env,guildId),scanDependencies(env,guildId),
-    env.DB.prepare('SELECT id,operation,status,total_items,completed_items,failed_items,reason,snapshot_id,created_at,started_at,finished_at,error_summary_json FROM channel_manager_jobs WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>(),
+    env.DB.prepare('SELECT id,operation,status,total_items,completed_items,failed_items,reason,snapshot_id,action_job_id,created_at,started_at,finished_at,error_summary_json FROM channel_manager_jobs WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>(),
     env.DB.prepare('SELECT id,name,source,created_at,expires_at,target_ids_json FROM channel_manager_snapshots WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>(),
   ]);
   const protectedIds=[guild.rules_channel_id,guild.public_updates_channel_id,guild.system_channel_id,guild.afk_channel_id].filter(Boolean).map(String);
-  return json({owner_only:true,channels,dependencies,protected_ids:protectedIds,system_channels:{rules:guild.rules_channel_id||null,updates:guild.public_updates_channel_id||null,system:guild.system_channel_id||null,afk:guild.afk_channel_id||null},jobs:jobs.results.map(parseJob),snapshots:snapshots.results.map((row:any)=>({...row,target_count:safeArray(row.target_ids_json).length}))});
+  return json({owner_only:true,channels,dependencies,protected_ids:protectedIds,system_channels:{rules:guild.rules_channel_id||null,updates:guild.public_updates_channel_id||null,system:guild.system_channel_id||null,afk:guild.afk_channel_id||null},jobs:jobs.results.map(parseJob),action_jobs:await safeActionJobs(env,guildId),snapshots:snapshots.results.map((row:any)=>({...row,target_count:safeArray(row.target_ids_json).length}))});
 }
 
 async function previewDelete(env:Env,guildId:string,body:any):Promise<Response>{
@@ -178,6 +179,7 @@ async function executeRestore(env:Env,guildId:string,actorId:string,body:any):Pr
 
 async function createJob(env:Env,guildId:string,actorId:string,operation:string,reason:string,snapshotId:number,request:any,items:any[]):Promise<number>{
   const now=Date.now();const inserted=await env.DB.prepare('INSERT INTO channel_manager_jobs(guild_id,operation,status,request_json,total_items,created_by,reason,snapshot_id,created_at) VALUES(?,?,?,?,?,?,?,?,?)').bind(guildId,operation,'queued',JSON.stringify(request),items.length,actorId,reason,snapshotId,now).run();const jobId=Number(inserted.meta.last_row_id);
+  try{const actionJobId=await createActionJob(env,{guildId,module:'channel-manager',action:operation,actorUserId:actorId,request});await env.DB.prepare('UPDATE channel_manager_jobs SET action_job_id=? WHERE id=?').bind(actionJobId,jobId).run();}catch{}
   for(let index=0;index<items.length;index++){const item=items[index];await env.DB.prepare('INSERT INTO channel_manager_job_items(job_id,guild_id,operation,channel_id,channel_type,name,payload_json,status,sort_order,created_at) VALUES(?,?,?,?,?,?,?,?,?,?)').bind(jobId,guildId,operation,item.id||null,item.type??kindType(item.kind),item.name,JSON.stringify(item),'queued',index,now).run();}
   return jobId;
 }
@@ -218,6 +220,8 @@ async function scanDependencies(env:Env,guildId:string):Promise<Record<string,an
   const automations=await env.DB.prepare('SELECT name,conditions_json,actions_json FROM automations WHERE guild_id=?').bind(guildId).all<any>();for(const automation of automations.results){const raw=`${automation.conditions_json||''} ${automation.actions_json||''}`;for(const id of raw.match(/\d{15,22}/g)||[])add(id,'automation',`Automation: ${automation.name}`)}
   return out;
 }
+
+async function safeActionJobs(env:Env,guildId:string):Promise<any[]>{try{return await listActionJobs(env,guildId,20)}catch{return []}}
 
 function kindType(kind:string):number{return kind==='category'?4:kind==='voice'?2:0}
 function canonicalOrder(channels:Channel[]):any[]{const categories=channels.filter(channel=>channel.type===4).sort((a,b)=>a.position-b.position),items:any[]=[];categories.forEach((category,position)=>{items.push({id:category.id,name:category.name,type:category.type,parent_id:null,position});channels.filter(channel=>channel.type!==4&&channel.parent_id===category.id).sort((a,b)=>a.position-b.position).forEach((channel,index)=>items.push({id:channel.id,name:channel.name,type:channel.type,parent_id:category.id,position:index}))});channels.filter(channel=>channel.type!==4&&!channel.parent_id).sort((a,b)=>a.position-b.position).forEach((channel,index)=>items.push({id:channel.id,name:channel.name,type:channel.type,parent_id:null,position:index}));return items}

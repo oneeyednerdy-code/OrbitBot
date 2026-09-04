@@ -35,6 +35,9 @@
 - **alpha.33** — Bugfix/forms pass: editable Ko-fi milestones, unified dashboard input/select/textarea styling, Shield Mode async render guard, Logs audit schema fix
 - **alpha.34** — Social authorization + reliability pass: Threads OAuth, Mastodon OAuth, Bluesky app-password auth, verbose sanitized error logging, Discord Events error visibility/Create Events diagnostic, non-destructive role-panel deletion, editable Applications/Appeals with up to 10 questions, onboarding Discord-type prompt removed
 - **alpha.35** — Guild authorization recovery: owner-safe access, Discord OAuth reauthentication flow, rate-limit distinction, and specific server-access errors instead of generic forbidden
+- **alpha.54** — Community Engagement question prompts with adjustable cadence, uploadable `.txt` banks, persistent duplicate prevention, and Queue-backed delivery
+- **alpha.55** — Selectable bundled Community Engagement sample banks loaded directly from the Orbit dashboard
+- **alpha.56** — Shared Reliability Control Plane: Permission Doctor, resource-drift repair signals, Action Center history, rate-limit visibility, supervised Gateway heartbeat health, and event RSVP panels
 # Orbit patch history
 
 ## 0.1.0-alpha.37 — Discord Reliability Baseline
@@ -156,3 +159,25 @@
 - Isolated Community welcome handling from Shield join-processing failures.
 - Added a dedicated Diagnostics navigation link.
 - No new migration, secret, OAuth scope, bot permission, Queue binding, or Durable Object.
+
+## 0.1.0-alpha.52 — Discord Audit Feed
+
+- Added an opt-in Logs-page setting that forwards every new Orbit audit event to a selected Discord channel.
+- Added queued, lease-protected, duplicate-resistant delivery and a Send Test Log action.
+- Limited Discord summaries to safe metadata and disabled member pings.
+- Temporary Discord failures retry; permanent permission/access failures stop and enter the sanitized error log.
+- Added migration `0037_discord_audit_feed.sql` for feed enablement and per-event delivery state.
+- No new secret, OAuth scope, Discord permission, Queue binding, Durable Object, or token reset.
+
+## 0.1.0-alpha.53 — Reliability Foundation
+
+- Prevented bot/webhook messages from recursively triggering message automations.
+- Made unknown automation conditions fail closed and Discord action failures visible.
+- Added shared timeouts to third-party HTTP requests.
+- Added bounded queue retries, terminal failure states, and Audit Feed outbox recovery.
+- Added bounded Scheduled Post and social publishing attempts.
+- Removed Role Panel N+1 reads, batched item writes, and added Discord compensation after a D1 edit failure.
+- Made multi-role selections and Level rewards report partial Discord failures accurately.
+- Added cancellable dashboard page requests and stopped stale navigation from polluting diagnostics.
+- Added four behavioral reliability tests, browser syntax validation, and `npm run check`.
+- No new migration, secret, OAuth scope, Discord permission, Queue binding, Durable Object, or token reset.

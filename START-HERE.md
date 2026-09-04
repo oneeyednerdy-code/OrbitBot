@@ -1,6 +1,22 @@
-# Start Here — Orbit v0.1.0-alpha.51
+# Start Here — Orbit v0.1.0-alpha.56
 
-Orbit alpha.51 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.56 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+
+## Alpha.56 reliability and creator control plane
+
+Apply migrations through `0040_config_backups.sql`, deploy, then open **Operations**. The new control plane checks Discord permissions with channel overwrites and role hierarchy, finds configured channels/roles that drifted or were deleted, records rate-limit buckets, shows Gateway heartbeat/IDENTIFY health, keeps queued multi-step actions visible in Action Center, and provides named Orbit configuration backups with confirmed restore/download/upload. Events can also post an RSVP panel with Going / Maybe / Can’t Go buttons.
+
+## Alpha.55 sample banks
+
+Community Engagement now includes a **Load a bundled sample** dropdown. Choose a theme and click **Load Selected Sample** to make it the active question bank. Orbit preserves the server's posted-question history, so changing themes cannot make a previously posted question appear again. Custom `.txt` uploads remain available.
+
+## Alpha.54 Community Engagement
+
+Apply migration `0038_community_engagement.sql`, deploy the cumulative build, then open **Community Engagement** in the dashboard. Choose a channel, cadence, and next-post time. The bundled bank is ready immediately; upload a `.txt` file to replace it with your own one-question-per-line bank. Orbit permanently records posted question keys for the server and stops when the active bank is exhausted instead of repeating a question.
+
+## Alpha.53 reliability foundation
+
+Alpha.53 needs no new migration or secret. It adds bounded queue retries, Audit Feed outbox recovery, third-party request timeouts, automation loop protection, stronger Leveling and Role Panel error handling, and cancellable dashboard page requests. Run `npm run check` before deployment.
 
 For a brand-new deployment, follow `DEPLOYMENT-GUIDE-WINDOWS-DETAILED.md` first, then `ALPHA31-SETUP.md` for the adaptive onboarding, social connection, diagnostics, and bug-report settings introduced in alpha.31. Alpha.32 requires no new secrets or migrations.
 

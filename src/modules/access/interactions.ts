@@ -7,6 +7,7 @@ import { evaluateCombinedAccess, notifyRoleChange } from './service';
 import { handleRoleInteraction } from '../roles/interactions';
 import { handleTicketInteraction } from '../tickets/interactions';
 import { createVerificationSession } from '../verification/session';
+import { handleEventInteraction } from '../events/interactions';
 
 export async function handleInteractions(request: Request, env: Env): Promise<Response> {
   const signature = request.headers.get('x-signature-ed25519');
@@ -23,6 +24,8 @@ export async function handleInteractions(request: Request, env: Env): Promise<Re
   if (ticketResponse) return json(ticketResponse);
   const roleResponse = await handleRoleInteraction(env, interaction);
   if (roleResponse) return json(roleResponse);
+  const eventResponse = await handleEventInteraction(env, interaction);
+  if (eventResponse) return json(eventResponse);
   if (interaction.type === 3 && interaction.data?.custom_id === 'orby_rules_agree') {
     const config = await env.DB.prepare('SELECT * FROM guild_config WHERE guild_id=?').bind(interaction.guild_id).first<GuildConfigRow>();
     if (!config?.rules_role_id) return json({ type: 4, data: { content: 'Orbit is not configured yet.', flags: 64 } });

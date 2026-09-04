@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.51 — Deploy Me First
+# Orbit v0.1.0-alpha.56 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.51. Apply `0036_security_reliability_hardening.sql` before deploying the Worker.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.56. Apply all pending migrations through `0040_config_backups.sql` before deploying the Worker. Alpha.56 adds the shared reliability control plane, Action Center job history, Permission Doctor, rate-limit visibility, Gateway health manifest, event RSVP panels, and confirmed Orbit configuration backup/restore.
 
 ## 1. Prerequisites
 
@@ -113,7 +113,7 @@ For a local test database:
 npm run db:local
 ```
 
-The complete release contains 36 ordered migrations. Do not manually skip migration files.
+The complete release contains 37 ordered migrations. Do not manually skip migration files.
 
 ## 9. Deploy
 

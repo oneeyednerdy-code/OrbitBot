@@ -2,8 +2,8 @@ import type { Env } from '../../types';
 import { json } from '../../http/responses';
 import { diagnosticsSnapshot } from '../diagnostics/api';
 import { sha256 } from '../../security/crypto';
+import { ORBIT_VERSION } from '../../version';
 
-const VERSION = '0.1.0-alpha.51';
 const MAX_TEXT = 4000;
 
 function cleanText(value: unknown, max = MAX_TEXT): string {
@@ -59,7 +59,7 @@ export async function bugReportsApi(request: Request, env: Env, guildId: string,
   const result = await env.DB.prepare(`INSERT INTO orbit_bug_reports
     (bug_id,guild_id,reporter_user_id,area,summary,description,current_page,orbit_version,severity,status,diagnostic_json,client_json,fingerprint,created_at,updated_at)
     VALUES(?,?,?,?,?,?,?,?,?,'new',?,?,?,?,?)`)
-    .bind(bugId,guildId,actorId,area,summary,description||null,currentPage,VERSION,severity,JSON.stringify(cleanObject(diagnostics)),JSON.stringify(client),fingerprint,now,now).run();
+    .bind(bugId,guildId,actorId,area,summary,description||null,currentPage,ORBIT_VERSION,severity,JSON.stringify(cleanObject(diagnostics)),JSON.stringify(client),fingerprint,now,now).run();
   const reportId = Number(result.meta.last_row_id || 0);
   if (reportId) await env.DB.prepare('INSERT INTO orbit_bug_events(bug_report_id,actor_user_id,event_type,note,created_at) VALUES(?,?,?,?,?)')
     .bind(reportId,actorId,'created',null,now).run();
