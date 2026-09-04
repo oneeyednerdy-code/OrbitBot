@@ -12,6 +12,12 @@ import { serveShortVideoMedia } from './modules/short-video/media';
 
 export async function routeRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
+  const legalAsset = url.pathname === '/privacy-policy' ? '/privacy-policy.html' : url.pathname === '/terms-of-service' ? '/terms-of-service.html' : null;
+  if (legalAsset) {
+    if (request.method !== 'GET' && request.method !== 'HEAD') return withSecurityHeaders(new Response('Method Not Allowed', { status: 405, headers: { allow: 'GET, HEAD' } }));
+    const assetUrl = new URL(legalAsset, request.url);
+    return withSecurityHeaders(await env.ASSETS.fetch(new Request(assetUrl, request)));
+  }
   if (url.pathname === '/oauth/login') return oauthStart(env);
   if (url.pathname === '/oauth/callback') return oauthCallback(request, env);
   if (url.pathname === '/oauth/install') return installRedirect(env, url.searchParams.get('guild_id'));

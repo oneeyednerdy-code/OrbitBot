@@ -111,6 +111,7 @@ public/js/pages/social.js
 public/js/pages/tickets.js
 public/js/pages/verification.js
 public/js/version.js
+public/privacy-policy.html
 public/question-banks/Anime_Comics_Questions.txt
 public/question-banks/Gamer_Questions.txt
 public/question-banks/Horror_Questions.txt
@@ -119,6 +120,7 @@ public/question-banks/Pop_Culture_Questions.txt
 public/question-banks/Sci_Fi_Fantasy_Questions.txt
 public/question-banks/Tabletop_RPG_Questions.txt
 public/question-banks/Twitch_Streamer_Questions.txt
+public/terms-of-service.html
 questions/community-engagement.txt
 README.md
 RELEASE-NOTES-0.1.0-alpha.30.md
@@ -154,6 +156,7 @@ RELEASE-NOTES-0.1.0-alpha.59.md
 RELEASE-NOTES-0.1.0-alpha.60.md
 RELEASE-NOTES-0.1.0-alpha.61.md
 RELEASE-NOTES-0.1.0-alpha.62.md
+RELEASE-NOTES-0.1.0-alpha.63.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md

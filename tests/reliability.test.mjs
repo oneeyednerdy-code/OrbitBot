@@ -251,4 +251,19 @@ test('server search can load channel counts without replacing the current sessio
   assert.match(index,/Find large servers/);
 });
 
+test('public legal pages and footer links are available for OAuth consent',()=>{
+  const router=read('src/router.ts');
+  const index=read('public/index.html');
+  const privacy=read('public/privacy-policy.html');
+  const terms=read('public/terms-of-service.html');
+  assert.match(router,/privacy-policy\.html/);
+  assert.match(router,/terms-of-service\.html/);
+  assert.match(index,/href="\/privacy-policy"/);
+  assert.match(index,/href="\/terms-of-service"/);
+  assert.match(privacy,/Privacy Policy/);
+  assert.match(privacy,/https:\/\/discord\.gg\/HCUYdVb8b/);
+  assert.match(terms,/Terms of Service/);
+  assert.match(terms,/https:\/\/discord\.gg\/HCUYdVb8b/);
+});
+
 function read(path){return readFileSync(new URL(`../${path}`,import.meta.url),'utf8')}

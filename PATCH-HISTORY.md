@@ -187,3 +187,5 @@
 - Added cancellable dashboard page requests and stopped stale navigation from polluting diagnostics.
 - Added four behavioral reliability tests, browser syntax validation, and `npm run check`.
 - No new migration, secret, OAuth scope, Discord permission, Queue binding, Durable Object, or token reset.
+
+- **alpha.63** — Added public Privacy Policy and Terms of Service pages with footer links for Google OAuth consent setup.
