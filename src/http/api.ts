@@ -25,10 +25,10 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/me') { const operator=String(env.ORBIT_OPERATOR_USER_IDS||'').split(',').map(v=>v.trim()).filter(Boolean).includes(session.user_id); return json({ id: session.user_id, username: session.username, avatar: session.avatar, csrf: session.csrf_token, operator }); }
   if (url.pathname === '/api/modules') return json(moduleCatalog);
   if (url.pathname === '/api/install-url') return json({ url: installUrl(env, url.searchParams.get('guild_id')) });
-  if (url.pathname === '/api/guilds') return listManageableGuilds(env, session);
+  if (url.pathname === '/api/guilds') return listManageableGuilds(request, env, session);
   if (url.pathname === '/api/operator/bugs') return operatorBugApi(request, env, session.user_id);
 
-  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
+  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|short-video|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
   if (!match) return json({ error: 'not_found' }, 404);
   const guildId = match[1];
   const action = match[2] ?? 'config';
@@ -56,7 +56,7 @@ async function validateMutationResources(request:Request,env:Env,guildId:string,
   if(action==='moderation'){add(channels,body.channel_id,body.log_channel_id);add(roles,body.exempt_roles);}
   if(action==='logs'&&body.operation==='save_feed')add(channels,body.admin_log_channel_id);
   if(action==='scheduler'&&(body.op==='create'||body.op==='batch'||!body.op)){const posts=body.op==='batch'&&Array.isArray(body.posts)?body.posts:[body];for(const post of posts){add(channels,post.channel_id);add(roles,post.ping_role_id);}}
-  if(action==='automation'&&!body.op){for(const item of [...(Array.isArray(body.conditions)?body.conditions:[]),...(Array.isArray(body.actions)?body.actions:[])]){add(channels,item?.channel_id);add(roles,item?.role_id);}}
+  if(action==='automation'&&(!body.op||body.op==='edit')){for(const item of [...(Array.isArray(body.conditions)?body.conditions:[]),...(Array.isArray(body.actions)?body.actions:[])]){add(channels,item?.channel_id);add(roles,item?.role_id);}}
   if(action==='community'){add(channels,body.welcome_channel_id,body.goodbye_channel_id,body.channel_id);add(roles,body.autorole_id);}
   if(action==='community-engagement'&&body.op==='save')add(channels,body.channel_id);
   if(action==='leveling'){add(channels,body.announce_channel_id);add(roles,body.reward_role_id);}

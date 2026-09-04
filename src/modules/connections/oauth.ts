@@ -8,7 +8,7 @@ import { recordSystemError } from '../../repositories/errors';
 import { publicHttpsUrl } from '../../security/outbound-url';
 import { fetchWithTimeout } from '../../http/fetch-timeout';
 
-const validPlatforms = new Set(['twitch','youtube','threads','mastodon']);
+const validPlatforms = new Set(['twitch','youtube','threads','mastodon','tiktok','instagram']);
 
 export async function connectionOauthStart(request: Request, env: Env, platform: string): Promise<Response> {
   if (!validPlatforms.has(platform)) return json({ error: 'unsupported_platform' }, 404);
@@ -44,7 +44,7 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
     url.searchParams.set('client_id', env.YOUTUBE_CLIENT_ID);
     url.searchParams.set('redirect_uri', `${env.APP_ORIGIN}/connections/youtube/callback`);
     url.searchParams.set('response_type', 'code');
-    url.searchParams.set('scope', 'https://www.googleapis.com/auth/youtube.readonly');
+    url.searchParams.set('scope', 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/youtube.upload');
     url.searchParams.set('access_type', 'offline');
     url.searchParams.set('include_granted_scopes', 'true');
     url.searchParams.set('prompt', 'consent');
@@ -60,6 +60,30 @@ export async function connectionOauthStart(request: Request, env: Env, platform:
     url.searchParams.set('redirect_uri', `${env.APP_ORIGIN}/connections/threads/callback`);
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('scope', 'threads_basic,threads_content_publish');
+    url.searchParams.set('state', state);
+    return redirect(url.toString());
+  }
+
+  if (platform === 'tiktok') {
+    if (!env.TIKTOK_CLIENT_KEY || !env.TIKTOK_CLIENT_SECRET) return json({ error: 'tiktok_oauth_not_configured' }, 503);
+    await saveState(env, state, guildId, session.user_id, platform, now, null);
+    const url = new URL('https://www.tiktok.com/v2/auth/authorize/');
+    url.searchParams.set('client_key', env.TIKTOK_CLIENT_KEY);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('scope', 'user.info.basic,video.list,video.publish');
+    url.searchParams.set('redirect_uri', `${env.APP_ORIGIN}/connections/tiktok/callback`);
+    url.searchParams.set('state', state);
+    return redirect(url.toString());
+  }
+
+  if (platform === 'instagram') {
+    if (!env.INSTAGRAM_CLIENT_ID || !env.INSTAGRAM_CLIENT_SECRET) return json({ error: 'instagram_oauth_not_configured' }, 503);
+    await saveState(env, state, guildId, session.user_id, platform, now, null);
+    const url = new URL('https://www.instagram.com/oauth/authorize');
+    url.searchParams.set('client_id', env.INSTAGRAM_CLIENT_ID);
+    url.searchParams.set('redirect_uri', `${env.APP_ORIGIN}/connections/instagram/callback`);
+    url.searchParams.set('response_type', 'code');
+    url.searchParams.set('scope', 'instagram_business_basic,instagram_business_content_publish');
     url.searchParams.set('state', state);
     return redirect(url.toString());
   }
@@ -110,6 +134,8 @@ export async function connectionOauthCallback(request: Request, env: Env, platfo
     if (platform === 'twitch') result = await exchangeTwitch(code, env);
     else if (platform === 'youtube') result = await exchangeYoutube(code, env);
     else if (platform === 'threads') result = await exchangeThreads(code, env);
+    else if (platform === 'tiktok') result = await exchangeTikTok(code, env);
+    else if (platform === 'instagram') result = await exchangeInstagram(code, env);
     else result = await exchangeMastodon(code, row.context_json, env);
 
     const cipher = await seal(JSON.stringify(result.credentials || result.token), env.SOCIAL_CREDENTIAL_KEY);
@@ -179,6 +205,67 @@ async function exchangeThreads(code: string, env: Env) {
   const account = await me.json<any>();
   if (!account?.id) throw new Error('threads_user_missing');
   return { accountId: String(account.id), accountLabel: account.username || String(account.id), credentials: { user_id: String(account.id), access_token: token.access_token }, scopes: ['threads_basic','threads_content_publish'], expiresAt: token.expires_in ? Date.now() + Number(token.expires_in) * 1000 : null };
+}
+
+async function exchangeTikTok(code: string, env: Env) {
+  if (!env.TIKTOK_CLIENT_KEY || !env.TIKTOK_CLIENT_SECRET) throw new Error('tiktok_oauth_not_configured');
+  const redirectUri = `${env.APP_ORIGIN}/connections/tiktok/callback`;
+  const response = await fetchWithTimeout('https://open.tiktokapis.com/v2/oauth/token/', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_key: env.TIKTOK_CLIENT_KEY, client_secret: env.TIKTOK_CLIENT_SECRET, code, grant_type: 'authorization_code', redirect_uri: redirectUri }),
+  });
+  const payload = await response.json<any>().catch(() => ({}));
+  const token = payload?.data;
+  if (!response.ok || payload?.error?.code && payload.error.code !== 'ok') throw new Error(`tiktok_exchange_failed_${response.status}`);
+  if (!token?.access_token || !token?.open_id) throw new Error('tiktok_token_missing');
+  const profileUrl = new URL('https://open.tiktokapis.com/v2/user/info/');
+  profileUrl.searchParams.set('fields', 'open_id,display_name');
+  const profileResponse = await fetchWithTimeout(profileUrl, { headers: { authorization: `Bearer ${token.access_token}` } });
+  const profilePayload = await profileResponse.json<any>().catch(() => ({}));
+  const profile = profilePayload?.data?.user;
+  if (!profileResponse.ok || !profile?.open_id) throw new Error(`tiktok_profile_failed_${profileResponse.status}`);
+  return {
+    accountId: String(profile.open_id),
+    accountLabel: String(profile.display_name || profile.open_id),
+    credentials: { access_token: token.access_token, refresh_token: token.refresh_token, open_id: String(token.open_id), scope: token.scope || '', refresh_expires_in: token.refresh_expires_in || null },
+    scopes: String(token.scope || '').split(/[ ,]+/).filter(Boolean),
+    expiresAt: Date.now() + Number(token.expires_in || 0) * 1000,
+  };
+}
+
+async function exchangeInstagram(code: string, env: Env) {
+  if (!env.INSTAGRAM_CLIENT_ID || !env.INSTAGRAM_CLIENT_SECRET) throw new Error('instagram_oauth_not_configured');
+  const redirectUri = `${env.APP_ORIGIN}/connections/instagram/callback`;
+  const response = await fetchWithTimeout('https://api.instagram.com/oauth/access_token', {
+    method: 'POST',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({ client_id: env.INSTAGRAM_CLIENT_ID, client_secret: env.INSTAGRAM_CLIENT_SECRET, grant_type: 'authorization_code', redirect_uri: redirectUri, code }),
+  });
+  const token = await response.json<any>().catch(() => ({}));
+  if (!response.ok || !token?.access_token || !token?.user_id) throw new Error(`instagram_exchange_failed_${response.status}`);
+  const profileUrl = new URL('https://graph.instagram.com/me');
+  profileUrl.searchParams.set('fields', 'user_id,username');
+  profileUrl.searchParams.set('access_token', token.access_token);
+  const profileResponse = await fetchWithTimeout(profileUrl);
+  const profile = await profileResponse.json<any>().catch(() => ({}));
+  if (!profileResponse.ok) throw new Error(`instagram_profile_failed_${profileResponse.status}`);
+  let longLived = token;
+  try {
+    const longUrl = new URL('https://graph.instagram.com/access_token');
+    longUrl.searchParams.set('grant_type', 'ig_exchange_token');
+    longUrl.searchParams.set('client_secret', env.INSTAGRAM_CLIENT_SECRET);
+    longUrl.searchParams.set('access_token', token.access_token);
+    const longResponse = await fetchWithTimeout(longUrl);
+    if (longResponse.ok) longLived = { ...token, ...(await longResponse.json<any>()) };
+  } catch {}
+  return {
+    accountId: String(profile.user_id || token.user_id),
+    accountLabel: String(profile.username || profile.user_id || token.user_id),
+    credentials: { access_token: longLived.access_token, user_id: String(profile.user_id || token.user_id), username: profile.username || null },
+    scopes: ['instagram_business_basic', 'instagram_business_content_publish'],
+    expiresAt: longLived.expires_in ? Date.now() + Number(longLived.expires_in) * 1000 : null,
+  };
 }
 
 async function exchangeMastodon(code: string, contextCipher: string | null, env: Env) {

@@ -70,7 +70,7 @@ export async function reliabilitySnapshot(env: Env, guildId: string, actorId: st
     check('queue', Boolean(env.JOBS), 'Job queue', env.JOBS ? 'Queue binding is available.' : 'Queue binding is missing; background operations cannot run.'),
     check('gateway', gateway?.state === 'ready' || gateway?.state === 'handshaking' || gateway?.state === 'connecting', 'Gateway supervisor', gateway ? `Gateway state: ${gateway.state}.` : 'Gateway status is unavailable.'),
     check('schema', schema.missing.length === 0, 'Reliability schema', schema.missing.length ? `Missing tables: ${schema.missing.join(', ')}.` : 'Action history, resource drift, rate-limit, and error tables are available.'),
-    check('resource_drift', drift.missing.length === 0, 'Configured resources', drift.missing.length ? `${drift.missing.length} configured Discord reference(s) are missing.` : 'Configured channels and roles still exist.'),
+    check('resource_drift', drift.missing.length === 0, 'Configured resources', drift.missing.length ? `${drift.missing.length} configured Discord reference(s) are missing: ${driftSummary(drift.missing)}.` : 'Configured channels and roles still exist.'),
   ];
   const score = Math.round((checks.filter(item => item.ok).length / checks.length) * 100);
   const result = {
@@ -263,6 +263,10 @@ async function configuredBindings(env: Env, guildId: string): Promise<Binding[]>
 function dedupe(value: Binding[]): Binding[] {
   const seen = new Set<string>();
   return value.filter(binding => { const key = `${binding.resourceType}:${binding.module}:${binding.bindingKey}`; if (seen.has(key)) return false; seen.add(key); return true; });
+}
+function driftSummary(value: Binding[]): string {
+  const summary = value.slice(0, 3).map(binding => `${binding.label} (${binding.resourceType} ${binding.resourceId})`).join('; ');
+  return value.length > 3 ? `${summary}; and ${value.length - 3} more` : summary;
 }
 function check(code: string, ok: boolean, label: string, detail: string) { return { code, ok, label, detail, severity: ok ? 'ok' : 'warning' }; }
 function safeJson(raw: any) { try { return JSON.parse(raw || '{}'); } catch { return { raw: String(raw || '').slice(0, 500) }; } }

@@ -17,7 +17,7 @@ export async function renderLeveling(message=''){
     const allRoles=state.bundle.roles||[];
     const roleName=roleId=>allRoles.find(role=>String(role.id)===String(roleId))?.name||`Unavailable role (${roleId})`;
     const channels=state.bundle.channels||[];
-    const rewardCards=rewards.length?rewards.map(reward=>`<div class="notice"><strong>Level ${Number(reward.level)}</strong><br><span class="small">@${escapeHtml(roleName(reward.role_id))}</span><br><button class="btn secondary lvEditReward" type="button" data-id="${Number(reward.id)}">Edit reward</button></div>`).join(''):'<div class="empty">No role rewards yet.</div>';
+    const rewardCards=rewards.length?rewards.map(reward=>`<div class="notice"><strong>Level ${Number(reward.level)}</strong><br><span class="small">@${escapeHtml(roleName(reward.role_id))}</span><br><button class="btn secondary lvEditReward" type="button" data-id="${Number(reward.id)}">Edit reward</button> <button class="btn ghost lvDeleteReward" type="button" data-id="${Number(reward.id)}">Delete</button></div>`).join(''):'<div class="empty">No role rewards yet.</div>';
     const selectedRole=editing?String(editing.role_id):'';
     const roleOptions=[...roles];
     if(selectedRole&&!roleOptions.some(role=>String(role.id)===selectedRole))roleOptions.unshift({id:selectedRole,name:roleName(selectedRole)});
@@ -32,7 +32,7 @@ export async function renderLeveling(message=''){
         <div class="grid"><div class="field span-4"><label for="lvRewardLevel">Level</label><input id="lvRewardLevel" type="number" min="1" value="${editing?Number(editing.level):''}" placeholder="10"></div><div class="field span-8"><label for="lvRewardRole">Role</label><select id="lvRewardRole"><option value="">Select role…</option>${roleOptions.map(role=>`<option value="${role.id}" ${String(role.id)===selectedRole?'selected':''}>@${escapeHtml(role.name)}</option>`).join('')}</select></div></div>
         <button id="saveLevelReward" class="btn" type="button">${editing?'Save Reward Changes':'Add Role Reward'}</button>${editing?' <button id="cancelLevelReward" class="btn secondary" type="button">Cancel</button>':''}<div id="levelStatus" class="notice hidden" aria-live="polite"></div>
       </section>
-      <section class="card span-5"><h2>Current role rewards</h2>${rewardCards}<h2>Leaderboard</h2>${data.leaders.slice(0,25).map((row,index)=>`<div class="notice"><strong>#${index+1} · ${escapeHtml(row.user_id)}</strong><br><span class="small">Level ${Number(row.level)} · ${Number(row.xp)} XP</span></div>`).join('')||'<div class="empty">No XP yet.</div>'}</section>
+      <section class="card span-5"><h2>Manual XP adjustment</h2><p class="small">Grant XP to a member without changing their message cooldown. Enter the Discord user ID exactly.</p><div class="field"><label for="lvXpUser">Discord user ID</label><input id="lvXpUser" inputmode="numeric" placeholder="123456789012345678"></div><div class="form-grid compact"><label>Username (optional)<input id="lvXpUsername" placeholder="OneEyedNerdy"></label><label>XP to add<input id="lvXpAmount" type="number" min="1" max="1000000" value="100"></label></div><button id="addLevelXp" class="btn secondary" type="button">Add XP</button><div id="xpAdjustStatus" class="notice hidden" aria-live="polite"></div><h2>Current role rewards</h2>${rewardCards}<h2>Leaderboard</h2>${(data.leaders||[]).slice(0,25).map((row,index)=>`<div class="notice"><strong>#${index+1} · ${escapeHtml(row.username||'Unknown username')}</strong><br><span class="small">Discord ID: ${escapeHtml(row.user_id)} · Level ${Number(row.level)} · ${Number(row.xp)} XP</span></div>`).join('')||'<div class="empty">No XP yet.</div>'}</section>
     </div>`;
 
     $('#saveLevelSettings').onclick=async()=>{
@@ -51,6 +51,16 @@ export async function renderLeveling(message=''){
       }catch(error){status.className='notice error';status.textContent=error.payload?.detail||`Could not save role reward (${error.message}).`;button.disabled=false;button.textContent=editing?'Save Reward Changes':'Add Role Reward';}
     };
     document.querySelectorAll('.lvEditReward').forEach(button=>button.onclick=()=>{editingRewardId=Number(button.dataset.id);renderLeveling();});
+    document.querySelectorAll('.lvDeleteReward').forEach(button=>button.onclick=async()=>{
+      if(!confirm('Delete this leveling reward rule? Existing members keep the role they already have.'))return;
+      try{await api(`/api/guilds/${guildId}/leveling?id=${encodeURIComponent(button.dataset.id)}`,{method:'DELETE'});if(Number(editingRewardId)===Number(button.dataset.id))editingRewardId=null;if(state.guildId===guildId&&state.page==='leveling')renderLeveling('Role reward deleted.');}
+      catch(error){showStatus(error.payload?.detail||`Could not delete role reward (${error.message}).`);}
+    });
+    $('#addLevelXp').onclick=async()=>{
+      const button=$('#addLevelXp'),status=$('#xpAdjustStatus');button.disabled=true;button.textContent='Adding…';status.className='notice';status.textContent='Adding XP…';
+      try{const result=await api(`/api/guilds/${guildId}/leveling`,{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({operation:'add_xp',user_id:$('#lvXpUser').value,username:$('#lvXpUsername').value,amount:Number($('#lvXpAmount').value)})});if(state.guildId===guildId&&state.page==='leveling')renderLeveling(`Added ${Number($('#lvXpAmount').value)} XP. Member total: ${result.xp} XP.`);}
+      catch(error){status.className='notice error';status.textContent=error.payload?.detail||`Could not add XP (${error.message}).`;button.disabled=false;button.textContent='Add XP';}
+    };
     if($('#cancelLevelReward'))$('#cancelLevelReward').onclick=()=>{editingRewardId=null;renderLeveling();};
   }catch(error){if(state.guildId===guildId&&state.page==='leveling')renderError(`Leveling failed (${error.message}).`)}
 }

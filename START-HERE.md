@@ -1,10 +1,18 @@
-# Start Here — Orbit v0.1.0-alpha.56
+# Start Here — Orbit v0.1.0-alpha.59
 
-Orbit alpha.56 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.59 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
-## Alpha.56 reliability and creator control plane
+## Alpha.59 publishing controls
 
-Apply migrations through `0040_config_backups.sql`, deploy, then open **Operations**. The new control plane checks Discord permissions with channel overwrites and role hierarchy, finds configured channels/roles that drifted or were deleted, records rate-limit buckets, shows Gateway heartbeat/IDENTIFY health, keeps queued multi-step actions visible in Action Center, and provides named Orbit configuration backups with confirmed restore/download/upload. Events can also post an RSVP panel with Going / Maybe / Can’t Go buttons.
+Apply migrations through `0044_short_video_posts.sql`, deploy, and add provider secrets if needed. **Connections** now supports YouTube upload authorization, TikTok Login Kit + `video.list`/`video.publish`, and Instagram Business Login. **Short-Form Video** is a separate queue for YouTube Shorts, TikTok, and Instagram Reels with post-now, schedule, cancel, retry, delete, privacy, and processing status. **Social** is the text composer for Discord, Bluesky, Threads, and Mastodon with live counters and server-side limit checks. Discord posting can be immediate or scheduled from the composer.
+
+## Alpha.58 creator and control updates
+
+Apply migrations through `0042_creator_source_items.sql`, deploy, then use the top-bar **Refresh Discord data** action after creating channels or categories. Scheduled Posts and Automations now support edit/delete; approved-creator alerts show last-check status and can be edited, enabled/disabled, or deleted. Community Alerts can announce podcast RSS and TikTok feed items into a selected channel. Feed item history prevents old podcast/TikTok entries from being announced twice. Stream-end automations can use `{creator}`, `{platform}`, `{title}`, `{url}`, and `{vod_url}`.
+
+## Alpha.57 reliability and creator control plane
+
+Apply migrations through `0040_config_backups.sql`, deploy, then open **Operations**. The control plane checks Discord permissions with channel overwrites and role hierarchy, finds configured channels/roles that drifted or were deleted, records rate-limit buckets, shows Gateway heartbeat/IDENTIFY health, keeps queued multi-step actions visible in Action Center, and provides named Orbit configuration backups with confirmed restore/download/upload. Events can also post an RSVP panel with Going / Maybe / Can’t Go buttons. Alpha.57 fixes the Events page data-loading error and names stale Discord references with a direct link to the setting that needs repair.
 
 ## Alpha.55 sample banks
 

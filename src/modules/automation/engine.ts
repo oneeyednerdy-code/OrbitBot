@@ -1,13 +1,14 @@
 import type { Env } from '../../types';
 import { addRole, discord, removeRole } from '../../discord/client';
+import { sendDiscordMessage } from '../../discord/messages';
 import { audit } from '../../repositories/audit';
 import { automationConditionMatches, discordActionSucceeded } from './policy.js';
 
-type AutomationContext={event_id?:string;user_id?:string;channel_id?:string;role_ids?:string[]};
+type AutomationContext={event_id?:string;user_id?:string;channel_id?:string;role_ids?:string[];creator?:string;platform?:string;title?:string;url?:string;vod_url?:string};
 type AutomationAction={type?:string;channel_id?:string;content?:string;user_id?:string;role_id?:string};
 
 export async function runAutomations(env:Env,guildId:string,triggerType:string,context:AutomationContext):Promise<void>{
-  if(!guildId||!context.user_id)return;
+  if(!guildId)return;
   const security=await env.DB.prepare('SELECT lockdown_active FROM security_configs WHERE guild_id=?').bind(guildId).first<{lockdown_active?:number}>();
   if(security?.lockdown_active)return;
 
@@ -29,7 +30,7 @@ export async function runAutomations(env:Env,guildId:string,triggerType:string,c
     const status=ok?'success':'partial';
     await env.DB.prepare('INSERT INTO automation_runs(automation_id,guild_id,trigger_type,status,detail_json,ran_at) VALUES(?,?,?,?,?,?)')
       .bind(row.id,guildId,triggerType,status,JSON.stringify({event_id:context.event_id||null,results}),Date.now()).run();
-    await audit(env,guildId,context.user_id,'automation_run',{automation_id:row.id,trigger_type:triggerType,status});
+    await audit(env,guildId,context.user_id||null,'automation_run',{automation_id:row.id,trigger_type:triggerType,status});
   }
 }
 
@@ -37,9 +38,9 @@ async function execute(env:Env,guildId:string,action:AutomationAction,context:Au
   let response:Response;
   if(action.type==='send_message'){
     const channel=action.channel_id||context.channel_id;
-    const content=String(action.content||'').trim().slice(0,2000);
+    const content=renderTemplate(String(action.content||''),context).trim().slice(0,2000);
     if(!channel||!content)throw new Error('automation_message_incomplete');
-    response=await discord(env,`/channels/${channel}/messages`,{method:'POST',body:JSON.stringify({content})});
+    response=await sendDiscordMessage(env,channel,{content,pingUserIds:context.user_id?[context.user_id]:[]});
   }else if(action.type==='add_role'){
     const userId=action.user_id||context.user_id;
     if(!userId||!action.role_id)throw new Error('automation_add_role_incomplete');
@@ -63,3 +64,8 @@ async function execute(env:Env,guildId:string,action:AutomationAction,context:Au
 }
 
 function parse(raw:unknown,fallback:any):any{try{return typeof raw==='string'?JSON.parse(raw):raw??fallback}catch{return fallback}}
+
+function renderTemplate(value:string,context:AutomationContext):string{
+  const user=context.user_id?`<@${context.user_id}>`:'';
+  return value.replaceAll('{user}',user).replaceAll('{creator}',context.creator||'').replaceAll('{platform}',context.platform||'').replaceAll('{title}',context.title||'').replaceAll('{url}',context.url||'').replaceAll('{vod_url}',context.vod_url||'');
+}

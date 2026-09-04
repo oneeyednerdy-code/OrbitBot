@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.56 — Build Validation
+# Orbit v0.1.0-alpha.59 — Build Validation
 
 Validated on 2026-09-04.
 
@@ -7,8 +7,8 @@ Validated on 2026-09-04.
 - Browser JavaScript syntax: every file in `public/js/` and `public/js/pages/` passes `node --check`.
 - TypeScript strict check: `tsc --noEmit` passes with TypeScript 5.9.3.
 - Worker bundle: the complete Worker bundles successfully with esbuild.
-- Unit tests: 27 regression tests pass, including behavioral coverage for Community Engagement sample loading, scheduler recurrence, automation loop protection, fail-closed automation conditions, bounded queue retries, browser navigation cancellation, reliability control-plane surfaces, event RSVP wiring, and Gateway health metadata.
-- D1 migration chain: all 40 migrations apply cleanly to an empty SQLite database.
+- Unit tests: 32 regression tests pass, including creator feed deduplication/status, stream-end automation templates, automation/scheduler edit/delete, server channel-count search, Community Engagement sample loading, scheduler recurrence, automation loop protection, fail-closed automation conditions, bounded queue retries, browser navigation cancellation, reliability control-plane surfaces, event RSVP wiring, stale-resource diagnostics, and the Events page data-loading regression.
+- D1 migration chain: all 42 migrations apply cleanly to an empty SQLite database.
 - Gateway source audit confirms:
   - `/gateway/bot` preflight before fresh IDENTIFY,
   - Gateway RESUME support,
@@ -21,7 +21,7 @@ Validated on 2026-09-04.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.56` from centralized runtime version metadata.
+- Login page and dashboard footer both display `v0.1.0-alpha.59` from centralized runtime version metadata.
 - External Discord, OAuth, social, creator, RSS, Turnstile, and interaction callback calls use bounded request timeouts.
 - Queue jobs use exponential retry delays, stop after five attempts, record sanitized failures, and write terminal status where the backing table supports it.
 - Audit Feed events left pending by a missed enqueue are recovered from the database outbox by the scheduled sweep.
@@ -87,7 +87,15 @@ Validated on 2026-09-04.
 
 Community Engagement accepts daily, weekly, every-two-weeks, and monthly schedules, parses one question per text-file line, uploads custom banks, and prevents a normalized question from being posted twice for a server.
 
+Short-Form Video has its own D1 queue and worker lifecycle. It validates connected YouTube/TikTok/Instagram scopes, accepts a public HTTPS media URL, posts to the provider-specific API, tracks asynchronous TikTok/Instagram processing, and exposes now/scheduled/cancel/retry/delete controls. Social Management counts Unicode code points in the browser and repeats server-side checks for Discord, Bluesky, Threads, and the connected Mastodon instance limit.
+
 Community Engagement exposes eight bundled sample banks through a dashboard dropdown and loads the selected bank server-side without clearing posted-question history.
+
+Discord data refresh reloads channels, categories, roles, and feature settings without reauthentication; the server picker can explicitly load channel counts to find larger manageable servers.
+
+Approved-creator alerts expose enabled/disabled, last-check, eligible/live/error counts, edit, and delete controls. Podcast RSS and TikTok feed items route to a selected Discord channel and persist source-item history to avoid duplicate announcements. Stream-end automations render creator/platform/title/live URL/VOD variables and use explicit mention allowlists.
+
+Scheduled Posts and generic Automations support guild-scoped edit/delete workflows; scheduled posts support every-two-weeks recurrence and guarded Mentionable-role repair. Leveling supports manual XP grants, username/Discord ID leaderboard display, and deletion of role reward rules; Community includes a goodbye test and sticky save confirmation.
 
 Orbit configuration backups include guild-scoped settings, workflows, and question-bank configuration while excluding sessions, OAuth state, credentials, activity history, delivery runs, and Discord content; restores require an exact confirmation phrase and acknowledgement.
 

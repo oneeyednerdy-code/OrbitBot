@@ -2,15 +2,25 @@ import type { Env } from '../../types';
 import { json } from '../../http/responses';
 import { loadGuildResources, validateChannelIds, validateRoleIds } from '../../discord/guild-resources';
 import { audit } from '../../repositories/audit';
+import { addManualXp } from './service';
 
 export async function levelingApi(request:Request,env:Env,guildId:string,actorId:string):Promise<Response>{
   if(request.method==='GET'){
     const [config,leaders,rewards]=await Promise.all([
       env.DB.prepare('SELECT * FROM leveling_configs WHERE guild_id=?').bind(guildId).first(),
-      env.DB.prepare('SELECT user_id,xp,level,updated_at FROM xp_members WHERE guild_id=? ORDER BY xp DESC LIMIT 100').bind(guildId).all(),
+      env.DB.prepare('SELECT user_id,username,xp,level,updated_at FROM xp_members WHERE guild_id=? ORDER BY xp DESC LIMIT 100').bind(guildId).all(),
       env.DB.prepare('SELECT id,guild_id,level,role_id,remove_previous FROM level_rewards WHERE guild_id=? ORDER BY level,id').bind(guildId).all(),
     ]);
     return json({config:config??{},leaders:leaders.results,rewards:rewards.results});
+  }
+  if(request.method==='DELETE'){
+    const id=positiveInteger(new URL(request.url).searchParams.get('id'),0);
+    if(!id)return json({error:'invalid_reward',detail:'Choose an existing role reward to delete.'},400);
+    const existing=await env.DB.prepare('SELECT id,level,role_id FROM level_rewards WHERE id=? AND guild_id=?').bind(id,guildId).first<any>();
+    if(!existing)return json({error:'reward_not_found',detail:'That role reward no longer exists.'},404);
+    await env.DB.prepare('DELETE FROM level_rewards WHERE id=? AND guild_id=?').bind(id,guildId).run();
+    await audit(env,guildId,null,'level_reward_deleted',{reward_id:id,level:existing.level,role_id:existing.role_id},actorId);
+    return json({ok:true});
   }
   if(request.method!=='POST')return json({error:'method_not_allowed'},405);
 
@@ -19,7 +29,17 @@ export async function levelingApi(request:Request,env:Env,guildId:string,actorId
   if(operation==='save_settings')return saveSettings(env,guildId,actorId,body);
   if(operation==='create_reward')return createReward(env,guildId,actorId,body);
   if(operation==='update_reward')return updateReward(env,guildId,actorId,body);
+  if(operation==='add_xp')return grantManualXp(env,guildId,actorId,body);
   return json({error:'invalid_operation',detail:'Choose a supported leveling operation.'},400);
+}
+
+async function grantManualXp(env:Env,guildId:string,actorId:string,body:any):Promise<Response>{
+  const userId=String(body.user_id||'').trim();
+  const amount=Number(body.amount);
+  if(!/^\d{15,22}$/.test(userId)||!Number.isInteger(amount)||amount<1||amount>1000000)return json({error:'invalid_xp_adjustment',detail:'Enter a valid Discord user ID and an XP amount from 1 to 1,000,000.'},400);
+  const username=String(body.username||'').trim().slice(0,100)||null;
+  const result=await addManualXp(env,guildId,userId,amount,username,actorId);
+  return json({ok:true,user_id:userId,xp:result.xp,level:result.level,previous_level:result.previousLevel});
 }
 
 async function saveSettings(env:Env,guildId:string,actorId:string,body:any):Promise<Response>{

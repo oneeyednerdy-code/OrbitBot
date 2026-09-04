@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.56 — Deploy Me First
+# Orbit v0.1.0-alpha.59 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.56. Apply all pending migrations through `0040_config_backups.sql` before deploying the Worker. Alpha.56 adds the shared reliability control plane, Action Center job history, Permission Doctor, rate-limit visibility, Gateway health manifest, event RSVP panels, and confirmed Orbit configuration backup/restore.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.59. Apply all pending migrations through `0044_short_video_posts.sql` before deploying the Worker. Alpha.59 adds official TikTok OAuth/video relay, a separate short-form video queue for YouTube Shorts, TikTok, and Instagram Reels, platform-aware text limits, and explicit Discord post-now/schedule controls.
 
 ## 1. Prerequisites
 
@@ -17,6 +17,9 @@ Optional integrations need their own credentials:
 - Twitch: `TWITCH_CLIENT_ID`, `TWITCH_CLIENT_SECRET`
 - YouTube live detection: `YOUTUBE_API_KEY`
 - Social publishing: `SOCIAL_CREDENTIAL_KEY` plus credentials entered through Orbit for Bluesky/Mastodon/Threads
+- YouTube publishing: `YOUTUBE_CLIENT_ID`, `YOUTUBE_CLIENT_SECRET` (Orbit requests `youtube.upload`)
+- TikTok publishing/relay: `TIKTOK_CLIENT_KEY`, `TIKTOK_CLIENT_SECRET` (TikTok app approval for `video.list` and `video.publish` is required)
+- Instagram Reels publishing: `INSTAGRAM_CLIENT_ID`, `INSTAGRAM_CLIENT_SECRET` (Instagram professional account and Meta approval for `instagram_business_content_publish` are required)
 
 ## 2. Discord Developer Portal
 
@@ -95,6 +98,12 @@ npx wrangler secret put TWITCH_CLIENT_ID
 npx wrangler secret put TWITCH_CLIENT_SECRET
 npx wrangler secret put YOUTUBE_API_KEY
 npx wrangler secret put SOCIAL_CREDENTIAL_KEY
+npx wrangler secret put YOUTUBE_CLIENT_ID
+npx wrangler secret put YOUTUBE_CLIENT_SECRET
+npx wrangler secret put TIKTOK_CLIENT_KEY
+npx wrangler secret put TIKTOK_CLIENT_SECRET
+npx wrangler secret put INSTAGRAM_CLIENT_ID
+npx wrangler secret put INSTAGRAM_CLIENT_SECRET
 ```
 
 Use a separate high-entropy `SOCIAL_CREDENTIAL_KEY`. Do not reuse the Discord bot token or Turnstile secret.
@@ -113,7 +122,17 @@ For a local test database:
 npm run db:local
 ```
 
-The complete release contains 37 ordered migrations. Do not manually skip migration files.
+The complete release contains 44 ordered migrations. Do not manually skip migration files.
+
+## 8a. Provider callback URLs and publishing setup
+
+Register these exact callback URLs with the provider apps:
+
+- YouTube: `https://YOUR-ORBIT-DOMAIN/connections/youtube/callback`
+- TikTok: `https://YOUR-ORBIT-DOMAIN/connections/tiktok/callback`
+- Instagram: `https://YOUR-ORBIT-DOMAIN/connections/instagram/callback`
+
+Under **Connections**, authorize the account before opening **Social** or **Short-Form Video**. TikTok and Instagram publishing may remain restricted until the provider approves the requested product/scopes. Short-Form Video currently accepts a public HTTPS media URL because TikTok and Instagram retrieve the media from a URL when publishing; YouTube is uploaded to its resumable upload endpoint by Orbit.
 
 ## 9. Deploy
 

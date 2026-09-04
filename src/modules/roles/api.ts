@@ -9,6 +9,7 @@ const ROLE_TEMPLATES:Record<string,{roles:TemplateRole[]}>= {
   pronouns:{roles:[templateRole('He/Him','he him','he/him pronouns'),templateRole('She/Her','she her','she/her pronouns'),templateRole('They/Them','they them','they/them pronouns'),templateRole('He/They','he they'),templateRole('She/They','she they'),templateRole('It/Its','it its'),templateRole('Neopronouns','neo pronouns'),templateRole('Any Pronouns','any pronouns'),templateRole('Ask Me','ask me','ask pronouns')]},
   notifications:{roles:[templateRole('Stream Alerts','live alerts','stream notifications'),templateRole('Event Alerts','events','event notifications'),templateRole('Community Updates','announcements','updates'),templateRole('Giveaways','giveaway alerts')]},
   interests:{roles:[templateRole('Gaming','games'),templateRole('TTRPG','tabletop','tabletop rpg'),templateRole('Content Creation','creator','streamer'),templateRole('Tech','technology'),templateRole('Art','artist')]},
+  games:{roles:[templateRole('MMORPG','mmo'),templateRole('RPG','role playing'),templateRole('FPS','first person shooter'),templateRole('Strategy','strategy games'),templateRole('Simulation','sim games'),templateRole('Horror','horror games'),templateRole('Cozy Games','cozy'),templateRole('TTRPG','tabletop','tabletop rpg')]},
   regions:{roles:[templateRole('Americas','north america','south america'),templateRole('Europe','european'),templateRole('Asia-Pacific','asia pacific','apac'),templateRole('Oceania','australia','new zealand')]},
 };
 

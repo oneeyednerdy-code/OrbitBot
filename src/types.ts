@@ -18,6 +18,10 @@ export interface Env {
   THREADS_CLIENT_ID?: string;
   THREADS_CLIENT_SECRET?: string;
   SOCIAL_CREDENTIAL_KEY?: string;
+  TIKTOK_CLIENT_KEY?: string;
+  TIKTOK_CLIENT_SECRET?: string;
+  INSTAGRAM_CLIENT_ID?: string;
+  INSTAGRAM_CLIENT_SECRET?: string;
   ORBIT_OPERATOR_USER_IDS?: string;
   CACHE?: KVNamespace;
   STORAGE?: R2Bucket;
@@ -32,6 +36,7 @@ export type OrbitJob =
   | { type: 'social-dispatch'; socialPostId: number }
   | { type: 'channel-manager-execute'; jobId: number }
   | { type: 'community-engagement-dispatch'; guildId: string }
+  | { type: 'short-video-dispatch'; shortVideoPostId: number }
   | { type: 'ticket-open-dispatch'; guildId: string; userId: string; categoryId: number; answers: Record<string,string>; interactionId: string; interactionToken: string; username: string }
   | { type: 'ticket-action-dispatch'; guildId: string; ticketId: number; action: 'close' | 'delete'; reason: string; actorId: string; actorRoleIds: string[]; actorPermissions: string; channelId: string; interactionId: string; interactionToken: string };
 

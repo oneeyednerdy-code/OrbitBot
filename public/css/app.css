@@ -23,6 +23,7 @@ button,a,select,input{font:inherit}
 .main{min-width:0}
 .topbar{height:70px;display:flex;align-items:center;gap:14px;justify-content:space-between;padding:0 30px;border-bottom:1px solid var(--line);background:rgba(9,9,13,.82);backdrop-filter:blur(12px);position:sticky;top:0;z-index:5}
 .server-picker{min-width:220px;max-width:360px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px 34px 10px 12px}
+.server-search{width:150px;min-width:120px;background:var(--surface);color:var(--text);border:1px solid var(--line);border-radius:9px;padding:10px 12px}
 .top-actions{display:flex;gap:9px;align-items:center}
 .content{max-width:1240px;margin:auto;padding:34px 30px 70px}
 .eyebrow{font-size:11px;letter-spacing:1.8px;text-transform:uppercase;color:var(--purple2);font-weight:850}
@@ -89,11 +90,13 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .content{padding:26px 18px 60px}
 .span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}
 .server-picker{min-width:0;max-width:220px}
+.server-search{width:120px;min-width:90px}
 .login-card{padding:32px 24px}
 .login-card .wordmark{font-size:47px}
 }
 @media(max-width:560px){.form-grid{grid-template-columns:1fr}.topbar{gap:8px}
 .server-picker{max-width:155px}
+.server-search{display:none}
 .top-actions .label-wide{display:none}
 .content{padding-left:14px;padding-right:14px}
 .page-title{font-size:27px}

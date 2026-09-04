@@ -38,6 +38,9 @@
 - **alpha.54** — Community Engagement question prompts with adjustable cadence, uploadable `.txt` banks, persistent duplicate prevention, and Queue-backed delivery
 - **alpha.55** — Selectable bundled Community Engagement sample banks loaded directly from the Orbit dashboard
 - **alpha.56** — Shared Reliability Control Plane: Permission Doctor, resource-drift repair signals, Action Center history, rate-limit visibility, supervised Gateway heartbeat health, and event RSVP panels
+- **alpha.57** — Events page data-loading fix and actionable stale Discord resource diagnostics
+- **alpha.58** — Discord data refresh, creator feed/status controls, stream-end/VOD automations, editable queue workflows, manual leveling tools, Mentionable-role repair, and large-server search
+- **alpha.59** — TikTok OAuth/video relay, separate short-form video publishing queue, YouTube/TikTok/Instagram API connections, platform-aware social text limits, and explicit Discord post-now/schedule controls
 # Orbit patch history
 
 ## 0.1.0-alpha.37 — Discord Reliability Baseline

@@ -15,6 +15,7 @@ import { renderCommunityEngagement } from './pages/community-engagement.js';
 import { renderKofi } from './pages/kofi.js';
 import { renderCreator } from './pages/creator.js';
 import { renderSocial } from './pages/social.js';
+import { renderShortVideo } from './pages/short-video.js';
 import { renderDiagnostics, renderLogs } from './pages/diagnostics.js';
 import { renderSecurity } from './pages/security.js';
 import { renderShield } from './pages/shield.js';
@@ -48,6 +49,7 @@ export function renderPage(){
     case 'kofi': return renderKofi();
     case 'creator': return renderCreator();
     case 'social': return renderSocial();
+    case 'short-video': return renderShortVideo();
     case 'security': return renderSecurity();
     case 'shield': return renderShield();
     case 'directory': return renderDirectory();

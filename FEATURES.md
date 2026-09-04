@@ -1,8 +1,9 @@
-# Orbit Feature Set — alpha.56 cumulative build
+# Orbit Feature Set — alpha.59 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
 - Server picker and online bot installation
+- No-logout Discord data refresh plus optional server channel-count search
 - Modular backend and split frontend page modules
 - D1 migration system
 - Diagnostics, audit logs, security-oriented error reporting, and an opt-in queued Discord Audit Feed
@@ -24,7 +25,7 @@
 - Creator Safety Mode for temporarily hiding preselected sensitive channels
 
 ## Community
-- Welcome/goodbye configuration
+- Welcome/goodbye configuration with goodbye test delivery
 - Auto-role
 - Custom commands
 - Sticky messages
@@ -38,23 +39,27 @@
 - Community Health scan
 
 ## Engagement
-- Message XP
-- Current Level reward inventory, edit-in-place rewards, and leaderboard
-- Automation engine using triggers/conditions/actions
+- Message XP with manual grants
+- Current Level reward inventory, edit/delete rewards, and leaderboard usernames + Discord IDs
+- Automation engine using triggers/conditions/actions, stream-end variables, status, edit, toggle, and delete
 
 ## Publishing
-- Scheduled Discord posts
+- Scheduled Discord posts with edit/delete, repeat cadence, and Mentionable-role repair
 - Queue-backed dispatch
 - Recurring schedules
 - Post templates/history
 - Ko-fi webhook and milestones
-- Community Alerts for Twitch, YouTube and RSS
+- Community Alerts for Twitch, YouTube, podcast RSS, TikTok feeds, and RSS
 - Custom going-live/offline messages
 - Per-alert Discord channel and ping role
-- Twitch VOD link support after a stream ends
+- Twitch VOD link support after a stream ends and stream-end automation messages
 - Creator Directory
 - Social publishing queue
 - Bluesky, Mastodon and Threads adapters
+- Social Management composer with live Bluesky, Threads, Mastodon, and Discord character counters
+- Separate Short-Form Video queue for YouTube Shorts, TikTok Direct Post, and Instagram Reels
+- YouTube, TikTok, and Instagram API login connections with encrypted server-side credentials
+- Immediate or scheduled Discord posting from Social Management
 
 ## Events & Operations
 - Community event management
@@ -64,9 +69,8 @@
 - Reliability Control Plane with Permission Doctor, role hierarchy checks, missing-resource drift, rate-limit buckets, gateway heartbeat state, and Action Center history
 
 ## Roadmap still intentionally not claimed as complete
-- Instagram publishing
-- TikTok publishing
-- YouTube Community/video publishing
+- YouTube Community publishing
+- TikTok/Instagram provider approval and account-specific capabilities beyond the implemented video publishing flow
 - Rich raid-train slot automation/check-in workflow
 - Public anonymous-report intake without Discord authentication
 - Full creator application public portal

@@ -12,6 +12,8 @@ import { recordSystemError } from '../../repositories/errors';
 import { MAX_QUEUE_ATTEMPTS, queueRetryDecision } from './retry-policy.js';
 import { dispatchEngagementQuestion, engagementSweep } from '../community-engagement/service';
 import { updateActionJob } from '../../repositories/action-jobs';
+import { pollTikTokAnnouncements } from '../tiktok/poll';
+import { dispatchShortVideo, shortVideoSweep } from '../short-video/dispatch';
 
 const DISPATCH_LEASE_MS=2*60_000;
 
@@ -25,6 +27,7 @@ export async function handleQueue(batch: MessageBatch<OrbitJob>, env: Env): Prom
       if (message.body.type === 'ticket-action-dispatch') await dispatchTicketAction(env,message.body);
       if (message.body.type === 'channel-manager-execute') await dispatchChannelManagerJob(env,message.body.jobId);
       if (message.body.type === 'community-engagement-dispatch') await dispatchEngagementQuestion(env,message.body.guildId);
+      if (message.body.type === 'short-video-dispatch') await dispatchShortVideo(env,message.body.shortVideoPostId);
       message.ack();
     } catch (error) {
       const attempts=Number(message.attempts||1),guildId=await jobGuildId(env,message.body);
@@ -106,7 +109,9 @@ export async function scheduledSweep(env: Env): Promise<void> {
     env.DB.prepare('DELETE FROM diagnostic_runs WHERE created_at<?').bind(cleanupNow-90*24*60*60_000),
   ]);
   await pollCreatorSources(env);
+  await pollTikTokAnnouncements(env);
   await socialSweep(env);
+  await shortVideoSweep(env);
   if (!env.JOBS) return; const now=Date.now();const due = await env.DB.prepare("SELECT id FROM scheduled_posts WHERE paused=0 AND scheduled_for<=? AND (status='queued' OR (status='sending' AND COALESCE(dispatch_lease_until,0)<=?)) ORDER BY scheduled_for ASC LIMIT 100").bind(now,now).all<{ id: number }>();
   for (const row of due.results) await env.JOBS.send({ type: 'scheduled-post-dispatch', scheduledPostId: row.id });
   const channelJobs=await env.DB.prepare("SELECT id FROM channel_manager_jobs WHERE status='queued' OR (status='running' AND COALESCE(lease_expires_at,0)<=?) ORDER BY created_at ASC LIMIT 20").bind(now).all<{id:number}>();
@@ -122,6 +127,7 @@ async function jobGuildId(env:Env,job:OrbitJob):Promise<string|null>{
     if(job.type==='scheduled-post-dispatch')return (await env.DB.prepare('SELECT guild_id FROM scheduled_posts WHERE id=?').bind(job.scheduledPostId).first<{guild_id:string}>())?.guild_id||null;
     if(job.type==='audit-log-dispatch')return (await env.DB.prepare('SELECT guild_id FROM audit_events WHERE id=?').bind(job.auditEventId).first<{guild_id:string}>())?.guild_id||null;
     if(job.type==='social-dispatch')return (await env.DB.prepare('SELECT guild_id FROM social_publish_posts WHERE id=?').bind(job.socialPostId).first<{guild_id:string}>())?.guild_id||null;
+    if(job.type==='short-video-dispatch')return (await env.DB.prepare('SELECT guild_id FROM short_video_posts WHERE id=?').bind(job.shortVideoPostId).first<{guild_id:string}>())?.guild_id||null;
     if(job.type==='channel-manager-execute')return (await env.DB.prepare('SELECT guild_id FROM channel_manager_jobs WHERE id=?').bind(job.jobId).first<{guild_id:string}>())?.guild_id||null;
   }catch{}
   return null;
@@ -133,6 +139,7 @@ async function markJobExhausted(env:Env,job:OrbitJob):Promise<void>{
     if(job.type==='scheduled-post-dispatch')await env.DB.prepare("UPDATE scheduled_posts SET status='failed',dispatch_lease_until=NULL,updated_at=? WHERE id=?").bind(now,job.scheduledPostId).run();
     else if(job.type==='audit-log-dispatch')await env.DB.prepare("UPDATE audit_events SET discord_log_status='blocked',discord_log_lease_until=NULL,discord_log_attempted_at=? WHERE id=?").bind(now,job.auditEventId).run();
     else if(job.type==='social-dispatch')await env.DB.prepare("UPDATE social_publish_posts SET status='failed',dispatch_lease_until=NULL,updated_at=? WHERE id=?").bind(now,job.socialPostId).run();
+    else if(job.type==='short-video-dispatch')await env.DB.prepare("UPDATE short_video_posts SET status='failed',dispatch_lease_until=NULL,last_error='queue_attempts_exhausted',updated_at=? WHERE id=?").bind(now,job.shortVideoPostId).run();
     else if(job.type==='channel-manager-execute'){const row=await env.DB.prepare('SELECT action_job_id FROM channel_manager_jobs WHERE id=?').bind(job.jobId).first<any>();await env.DB.prepare("UPDATE channel_manager_jobs SET status='failed',lease_expires_at=NULL,heartbeat_at=?,finished_at=?,error_summary_json=? WHERE id=?").bind(now,now,JSON.stringify([{error:'queue_attempts_exhausted'}]),job.jobId).run();try{await updateActionJob(env,row?.action_job_id,{status:'failed',finished:true,errorCode:'queue_attempts_exhausted',progress:{error:'queue_attempts_exhausted'}})}catch{}}
     else if(job.type==='community-engagement-dispatch')await env.DB.prepare("UPDATE community_engagement_configs SET enabled=0,dispatch_lease_until=NULL,last_error='queue_attempts_exhausted',updated_at=? WHERE guild_id=?").bind(now,job.guildId).run();
     else if(job.type==='ticket-open-dispatch')await env.DB.prepare("UPDATE tickets SET status='failed',closed_at=? WHERE guild_id=? AND interaction_id=?").bind(now,job.guildId,job.interactionId).run();

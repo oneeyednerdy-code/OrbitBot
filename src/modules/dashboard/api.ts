@@ -32,11 +32,12 @@ import { onboardingApi } from '../onboarding/api';
 import { connectionsApi } from '../connections/api';
 import { bugReportsApi } from '../bug-reports/api';
 import { channelManagerApi } from '../channel-manager/api';
+import { shortVideoApi } from '../short-video/api';
 import { createVerificationSession } from '../verification/session';
 import { loadGuildResources, validateChannelIds } from '../../discord/guild-resources';
 import { sendDiscordMessage } from '../../discord/messages';
 
-export async function listManageableGuilds(env: Env, session: SessionRow): Promise<Response> {
+export async function listManageableGuilds(request: Request, env: Env, session: SessionRow): Promise<Response> {
   let token: string;
   try { token = await openSeal(session.access_token, env.SESSION_SECRET); } catch { return json({ error: 'unauthorized' }, 401); }
   const response = await discord(env, '/users/@me/guilds', {}, token);
@@ -48,7 +49,17 @@ export async function listManageableGuilds(env: Env, session: SessionRow): Promi
   }
   if (!response.ok) return json({ error: 'discord_authorization_failed', detail: `Discord server lookup returned HTTP ${response.status}.` }, 502);
   const guilds = ((await response.json()) as any[]).filter(guild => guild?.owner === true || canManageGuild(String(guild?.permissions ?? '0')));
-  return json(guilds.map(guild => ({ id: guild.id, name: guild.name, icon: guild.icon, owner: guild.owner })));
+  const result=guilds.map(guild => ({ id: guild.id, name: guild.name, icon: guild.icon, owner: guild.owner }));
+  if(new URL(request.url).searchParams.get('include_channel_counts')!=='1')return json(result);
+  const counted=[];
+  for(const guild of result){
+    try{
+      const channelsResponse=await discord(env,`/guilds/${guild.id}/channels`,{},token);
+      if(!channelsResponse.ok){counted.push({...guild,channel_count:null});continue;}
+      const channels=await channelsResponse.json<any[]>();counted.push({...guild,channel_count:channels.length,category_count:channels.filter(channel=>Number(channel.type)===4).length});
+    }catch{counted.push({...guild,channel_count:null});}
+  }
+  return json(counted);
 }
 
 export async function handleGuildApi(request: Request, env: Env, guildId: string, action: string, guild: any, session: SessionRow): Promise<Response> {
@@ -73,6 +84,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'kofi') return kofiApi(request, env, guildId);
   if (action === 'creator') return creatorApi(request, env, guildId);
   if (action === 'social') return socialApi(request, env, guildId, session.user_id);
+  if (action === 'short-video') return shortVideoApi(request, env, guildId, session.user_id);
   if (action === 'security') return securityApi(request, env, guildId, session.user_id);
   if (action === 'shield') return shieldApi(request, env, guildId, session.user_id);
   if (action === 'creator-directory') return creatorDirectoryApi(request, env, guildId);

@@ -61,6 +61,10 @@ migrations/0037_discord_audit_feed.sql
 migrations/0038_community_engagement.sql
 migrations/0039_reliability_control_plane.sql
 migrations/0040_config_backups.sql
+migrations/0041_leveling_usernames.sql
+migrations/0042_creator_source_items.sql
+migrations/0043_tiktok_announcements.sql
+migrations/0044_short_video_posts.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -100,6 +104,7 @@ public/js/pages/scheduler.js
 public/js/pages/security.js
 public/js/pages/settings.js
 public/js/pages/shield.js
+public/js/pages/short-video.js
 public/js/pages/social.js
 public/js/pages/tickets.js
 public/js/pages/verification.js
@@ -141,6 +146,9 @@ RELEASE-NOTES-0.1.0-alpha.53.md
 RELEASE-NOTES-0.1.0-alpha.54.md
 RELEASE-NOTES-0.1.0-alpha.55.md
 RELEASE-NOTES-0.1.0-alpha.56.md
+RELEASE-NOTES-0.1.0-alpha.57.md
+RELEASE-NOTES-0.1.0-alpha.58.md
+RELEASE-NOTES-0.1.0-alpha.59.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -204,11 +212,16 @@ src/modules/scheduler/retry-policy.js
 src/modules/security-center/api.ts
 src/modules/shield/api.ts
 src/modules/shield/service.ts
+src/modules/short-video/api.ts
+src/modules/short-video/dispatch.ts
+src/modules/short-video/providers.ts
 src/modules/social/adapters.ts
 src/modules/social/api.ts
 src/modules/social/dispatch.ts
+src/modules/social/limits.ts
 src/modules/tickets/api.ts
 src/modules/tickets/interactions.ts
+src/modules/tiktok/poll.ts
 src/modules/verification/route.ts
 src/modules/verification/session.ts
 src/repositories/action-jobs.ts
