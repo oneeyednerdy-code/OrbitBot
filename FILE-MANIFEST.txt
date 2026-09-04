@@ -66,6 +66,7 @@ migrations/0042_creator_source_items.sql
 migrations/0043_tiktok_announcements.sql
 migrations/0044_short_video_posts.sql
 migrations/0045_short_video_uploads.sql
+migrations/0046_owner_stream_alerts.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -152,6 +153,7 @@ RELEASE-NOTES-0.1.0-alpha.58.md
 RELEASE-NOTES-0.1.0-alpha.59.md
 RELEASE-NOTES-0.1.0-alpha.60.md
 RELEASE-NOTES-0.1.0-alpha.61.md
+RELEASE-NOTES-0.1.0-alpha.62.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md

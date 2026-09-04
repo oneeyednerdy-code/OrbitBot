@@ -1,4 +1,4 @@
-# Orbit Feature Set — alpha.61 cumulative build
+# Orbit Feature Set — alpha.62 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
@@ -54,6 +54,7 @@
 - Custom going-live/offline messages
 - Per-alert Discord channel and ping role
 - Twitch VOD link support after a stream ends and stream-end automation messages
+- Server-owner-only My Stream Twitch authorization with a selected Discord destination, optional role ping, editable message, and duplicate-safe stream IDs
 - Creator Directory
 - Social publishing queue
 - Bluesky, Mastodon and Threads adapters

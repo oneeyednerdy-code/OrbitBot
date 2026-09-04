@@ -83,7 +83,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'community') return communityApi(request, env, guildId, session.user_id);
   if (action === 'community-engagement') return communityEngagementApi(request, env, guildId, session.user_id);
   if (action === 'kofi') return kofiApi(request, env, guildId);
-  if (action === 'creator') return creatorApi(request, env, guildId);
+  if (action === 'creator') return creatorApi(request, env, guildId, session.user_id, guild);
   if (action === 'social') return socialApi(request, env, guildId, session.user_id);
   if (action === 'short-video') return shortVideoApi(request, env, guildId, session.user_id);
   if (action === 'short-video-upload') return shortVideoUploadApi(request, env, guildId, session.user_id);

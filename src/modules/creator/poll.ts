@@ -31,6 +31,30 @@ export async function pollCreatorSources(env:Env):Promise<void>{
   }catch(e){await env.DB.prepare('UPDATE creator_sources SET last_checked_at=?,last_error=? WHERE id=?').bind(Date.now(),String(e).slice(0,300),s.id).run();}}
  await pollRoleGatedCreators(env);
 }
+
+export async function pollOwnerStreamAlerts(env:Env):Promise<void>{
+ const rows=(await env.DB.prepare(`SELECT o.*,c.account_label,c.account_login
+   FROM owner_stream_alert_configs o JOIN creator_account_connections c ON c.id=o.connection_id
+   WHERE o.enabled=1 AND c.platform='twitch' AND c.status='connected' AND c.account_login IS NOT NULL`).all<any>()).results;
+ for(const row of rows){
+  const now=Date.now(),interval=Math.max(5,Number(row.poll_interval_minutes||5))*60000;
+  if(row.last_checked_at&&now-Number(row.last_checked_at)<interval)continue;
+  try{
+   const item=await twitchState(env,String(row.account_login));
+   const freshLive=item.live&&(!Number(row.last_live_state)||String(row.last_stream_id||'')!==String(item.id));
+   if(freshLive){
+    const source={label:row.account_label||row.account_login,mention_role_id:row.mention_role_id,discord_channel_id:row.discord_channel_id};
+    await sendAlert(env,source,render(row.live_message||'🔴 **{creator} is LIVE on Twitch!**\n{title}\n{url}',source,item));
+   }
+   await env.DB.prepare(`UPDATE owner_stream_alert_configs SET last_live_state=?,last_stream_id=?,last_checked_at=?,last_notified_at=?,last_error=NULL,updated_at=? WHERE guild_id=?`)
+    .bind(item.live?1:0,item.live?item.id:null,now,freshLive?now:(row.last_notified_at||null),now,row.guild_id).run();
+  }catch(error){
+   await env.DB.prepare('UPDATE owner_stream_alert_configs SET last_checked_at=?,last_error=?,updated_at=? WHERE guild_id=?')
+    .bind(now,String(error).slice(0,300),now,row.guild_id).run();
+  }
+ }
+}
+
 async function sendAlert(env:Env,s:any,content:string){const mention=s.mention_role_id?`<@&${s.mention_role_id}> `:'',message=`${mention}${content}`;if(message.length>2000)throw new Error('message_too_long');const response=await discord(env,`/channels/${s.discord_channel_id}/messages`,{method:'POST',body:JSON.stringify({content:message,allowed_mentions:{parse:[],roles:s.mention_role_id?[s.mention_role_id]:[]}})});if(!response.ok)throw new Error(await discordError('discord_post_failed',response));}
 function render(t:string,s:any,i:External){return t.replaceAll('{creator}',s.label).replaceAll('{title}',i.title||'').replaceAll('{url}',i.url||'').replaceAll('{vod_url}',s.vod_url||i.vodUrl||i.url||'');}
 async function rememberSourceItem(env:Env,sourceId:number,externalId:string,announcedAt:number|null):Promise<void>{await env.DB.prepare('INSERT INTO creator_source_items(source_id,external_id,announced_at,created_at) VALUES(?,?,?,?) ON CONFLICT(source_id,external_id) DO UPDATE SET announced_at=COALESCE(excluded.announced_at,creator_source_items.announced_at)').bind(sourceId,String(externalId),announcedAt,Date.now()).run();}

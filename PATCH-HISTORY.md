@@ -43,6 +43,7 @@
 - **alpha.59** — TikTok OAuth/video relay, separate short-form video publishing queue, YouTube/TikTok/Instagram API connections, platform-aware social text limits, and explicit Discord post-now/schedule controls
 - **alpha.60** — Direct short-form video file uploads through R2, public media serving for provider retrieval, and guarded editing of existing Discord categories and channels
 - **alpha.61** — Bound direct video uploads to the `orbit-storage` R2 bucket through the Wrangler-generated `orbit_storage` binding, while retaining compatibility with older `STORAGE` deployments
+- **alpha.62** — Added server-owner-only My Stream Twitch OAuth, selected Discord destination and role ping controls, editable live messages, reconnect/delete actions, encrypted owner account linkage, and duplicate-safe stream-ID polling
 # Orbit patch history
 
 ## 0.1.0-alpha.37 — Discord Reliability Baseline
