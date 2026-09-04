@@ -24,6 +24,8 @@ export interface Env {
   INSTAGRAM_CLIENT_SECRET?: string;
   ORBIT_OPERATOR_USER_IDS?: string;
   CACHE?: KVNamespace;
+  orbit_storage?: R2Bucket;
+  /** Backward-compatible binding name for older deployments. */
   STORAGE?: R2Bucket;
   JOBS?: Queue<OrbitJob>;
   GATEWAY: DurableObjectNamespace;

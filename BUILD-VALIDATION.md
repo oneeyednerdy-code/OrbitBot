@@ -1,4 +1,4 @@
-# Orbit v0.1.0-alpha.60 — Build Validation
+# Orbit v0.1.0-alpha.61 — Build Validation
 
 Validated on 2026-09-04.
 
@@ -21,7 +21,7 @@ Validated on 2026-09-04.
 - Package contains no `node_modules`.
 - Scheduled Posts preview preserves entered newlines and blank lines with safe text rendering.
 - Scheduler UI and API enforce Discord's 2,000-character message limit, including an optional role mention.
-- Login page and dashboard footer both display `v0.1.0-alpha.60` from centralized runtime version metadata.
+- Login page and dashboard footer both display `v0.1.0-alpha.61` from centralized runtime version metadata.
 - External Discord, OAuth, social, creator, RSS, Turnstile, and interaction callback calls use bounded request timeouts.
 - Queue jobs use exponential retry delays, stop after five attempts, record sanitized failures, and write terminal status where the backing table supports it.
 - Audit Feed events left pending by a missed enqueue are recovered from the database outbox by the scheduled sweep.

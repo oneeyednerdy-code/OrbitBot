@@ -37,11 +37,23 @@
 		"TURNSTILE_SITE_KEY": "0x4AAAAAAEdM8FKnSCsoDd_s",
 		"TURNSTILE_HOSTNAMES": "orbitbot.oneeyednerdy.workers.dev",
 		"ORBIT_OPERATOR_USER_IDS": ""
-		// Optional integrations are configured as secrets: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, THREADS_CLIENT_ID, THREADS_CLIENT_SECRET, SOCIAL_CREDENTIAL_KEY
+		// Optional integrations are configured as secrets: TWITCH_CLIENT_ID, TWITCH_CLIENT_SECRET, YOUTUBE_API_KEY, YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET, THREADS_CLIENT_ID, THREADS_CLIENT_SECRET, TIKTOK_CLIENT_KEY, TIKTOK_CLIENT_SECRET, INSTAGRAM_CLIENT_ID, INSTAGRAM_CLIENT_SECRET, SOCIAL_CREDENTIAL_KEY
 	},
-	// Optional Cloudflare bindings. KV/R2 are not required for the current feature set.
-	// "kv_namespaces": [{ "binding": "CACHE", "id": "YOUR-KV-ID" }],
-	// "r2_buckets": [{ "binding": "STORAGE", "bucket_name": "orbit-storage" }],
+	// R2 storage for direct Short-Form Video file uploads. URL-only video posts do not require it.
+	"kv_namespaces": [
+		{
+			"binding": "CACHE",
+			"id": "4199f63465b843deb1d7d6327c9f9beb",
+			"remote": true
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "orbit_storage",
+			"bucket_name": "orbit-storage",
+			"remote": true
+		}
+	],
 	"queues": {
 		"producers": [
 			{
@@ -76,12 +88,5 @@
 			]
 		}
 	],
-	"preview_urls": false,
-	"r2_buckets": [
-		{
-			"bucket_name": "orbit-storage",
-			"binding": "orbit_storage",
-			"remote": true
-		}
-	]
+	"preview_urls": false
 }

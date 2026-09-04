@@ -14,7 +14,7 @@ export async function shortVideoApi(request: Request, env: Env, guildId: string,
       env.DB.prepare(`SELECT id,platform,account_id,account_label,status,scopes_json,expires_at FROM creator_account_connections
         WHERE guild_id=? AND platform IN ('youtube','tiktok','instagram') ORDER BY platform,account_label`).bind(guildId).all(),
     ]);
-    return json({ posts: posts.results, connections: connections.results, targets: VIDEO_TARGETS, upload_enabled: Boolean(env.STORAGE), max_upload_bytes: MAX_SHORT_VIDEO_UPLOAD_BYTES, upload_types: ['video/mp4', 'video/quicktime', 'video/webm'] });
+    return json({ posts: posts.results, connections: connections.results, targets: VIDEO_TARGETS, upload_enabled: Boolean(env.orbit_storage || env.STORAGE), max_upload_bytes: MAX_SHORT_VIDEO_UPLOAD_BYTES, upload_types: ['video/mp4', 'video/quicktime', 'video/webm'] });
   }
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
   const body = await request.json<any>();
@@ -87,7 +87,8 @@ async function action(env: Env, guildId: string, body: any): Promise<Response> {
 async function releaseMedia(env: Env, guildId: string, objectKey: string): Promise<void> {
   const used = await env.DB.prepare('SELECT COUNT(*) AS count FROM short_video_posts WHERE guild_id=? AND media_key=?').bind(guildId, objectKey).first<any>();
   if (Number(used?.count || 0) > 0) return;
-  if (env.STORAGE) await env.STORAGE.delete(objectKey).catch(() => undefined);
+  const bucket = env.orbit_storage || env.STORAGE;
+  if (bucket) await bucket.delete(objectKey).catch(() => undefined);
   await env.DB.prepare('DELETE FROM short_video_media WHERE guild_id=? AND object_key=?').bind(guildId, objectKey).run();
 }
 

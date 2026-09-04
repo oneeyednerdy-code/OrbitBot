@@ -14,9 +14,14 @@ export function shortVideoMediaUrl(env: Env, guildId: string, objectKey: string)
   return new URL(`/media/short-video/${guildId}/${token}`, env.APP_ORIGIN).toString();
 }
 
+function storage(env: Env): R2Bucket | undefined {
+  return env.orbit_storage || env.STORAGE;
+}
+
 export async function shortVideoUploadApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method !== 'POST') return json({ error: 'method_not_allowed' }, 405);
-  if (!env.STORAGE) return json({ error: 'short_video_storage_unavailable', detail: 'Direct video uploads are not configured yet. Add the Orbit R2 STORAGE binding, or use a public HTTPS video URL.' }, 503);
+  const bucket = storage(env);
+  if (!bucket) return json({ error: 'short_video_storage_unavailable', detail: 'Direct video uploads are not configured yet. Add the orbit_storage R2 binding, or use a public HTTPS video URL.' }, 503);
   const size = Number(request.headers.get('content-length') || 0);
   if (!Number.isSafeInteger(size) || size <= 0) return json({ error: 'video_size_required', detail: 'Orbit needs the video size to validate this upload. Choose the file again from the browser.' }, 400);
   if (size > MAX_SHORT_VIDEO_UPLOAD_BYTES) return json({ error: 'video_file_too_large', detail: `Video files must be ${Math.floor(MAX_SHORT_VIDEO_UPLOAD_BYTES / 1_000_000)} MB or smaller.` }, 413);
@@ -29,7 +34,7 @@ export async function shortVideoUploadApi(request: Request, env: Env, guildId: s
   const objectKey = `short-video/${guildId}/${token}`;
   const now = Date.now();
   try {
-    const object = await env.STORAGE.put(objectKey, request.body, {
+    const object = await bucket.put(objectKey, request.body, {
       httpMetadata: { contentType, contentDisposition: 'inline' },
       customMetadata: { guild_id: guildId, uploaded_by: actorId, file_name: fileName },
     });
@@ -43,7 +48,7 @@ export async function shortVideoUploadApi(request: Request, env: Env, guildId: s
     await audit(env, guildId, null, 'short_video_uploaded', { media_id: mediaId, file_name: fileName, content_type: contentType, size_bytes: sizeBytes }, actorId);
     return json({ ok: true, media_id: mediaId, media_url: mediaUrl, file_name: fileName, content_type: contentType, size_bytes: sizeBytes });
   } catch (error) {
-    await env.STORAGE.delete(objectKey).catch(() => undefined);
+    await bucket.delete(objectKey).catch(() => undefined);
     if (error instanceof Error && error.message === 'short_video_media_url_failed') return json({ error: 'video_upload_failed', detail: 'Orbit stored the file but could not register it for publishing. Try again.' }, 502);
     return json({ error: 'video_upload_failed', detail: 'Orbit could not store that video. Check the R2 binding and try again.' }, 502);
   }
@@ -53,8 +58,9 @@ export async function serveShortVideoMedia(request: Request, env: Env): Promise<
   const match = new URL(request.url).pathname.match(/^\/media\/short-video\/(\d+)\/([A-Za-z0-9]{32,80})$/);
   if (!match) return withSecurityHeaders(new Response('Not found', { status: 404 }));
   if (request.method !== 'GET' && request.method !== 'HEAD') return withSecurityHeaders(new Response(null, { status: 405, headers: { allow: 'GET, HEAD', ...securityHeaders() } }));
-  if (!env.STORAGE) return withSecurityHeaders(new Response('Not found', { status: 404 }));
-  const object = await env.STORAGE.get(`short-video/${match[1]}/${match[2]}`);
+  const bucket = storage(env);
+  if (!bucket) return withSecurityHeaders(new Response('Not found', { status: 404 }));
+  const object = await bucket.get(`short-video/${match[1]}/${match[2]}`);
   if (!object) return withSecurityHeaders(new Response('Not found', { status: 404 }));
   const headers = new Headers({
     'cache-control': 'public, max-age=3600',
@@ -68,12 +74,13 @@ export async function serveShortVideoMedia(request: Request, env: Env): Promise<
 }
 
 export async function cleanupExpiredShortVideoMedia(env: Env): Promise<void> {
-  if (!env.STORAGE) return;
+  const bucket = storage(env);
+  if (!bucket) return;
   const expired = await env.DB.prepare(`SELECT id,object_key FROM short_video_media m
     WHERE m.expires_at<=? AND NOT EXISTS (SELECT 1 FROM short_video_posts p WHERE p.media_key=m.object_key)
     ORDER BY m.expires_at ASC LIMIT 20`).bind(Date.now()).all<any>();
   for (const row of expired.results) {
-    await env.STORAGE.delete(String(row.object_key)).catch(() => undefined);
+    await bucket.delete(String(row.object_key)).catch(() => undefined);
     await env.DB.prepare('DELETE FROM short_video_media WHERE id=? AND object_key=?').bind(Number(row.id), String(row.object_key)).run();
   }
 }

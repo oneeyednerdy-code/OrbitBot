@@ -205,7 +205,7 @@ test('short-form video and social management stay separate and enforce platform 
   assert.match(videoPage,/Schedule Video/);
   assert.match(videoPage,/type="file"/);
   assert.match(videoPage,/short-video-upload/);
-  assert.match(media,/STORAGE\.put/);
+  assert.match(media,/bucket\.put/);
   assert.match(media,/shortVideoMediaUrl/);
   assert.match(router,/serveShortVideoMedia/);
   assert.match(socialApi,/text_limit_exceeded/);

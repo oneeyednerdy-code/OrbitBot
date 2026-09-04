@@ -1,10 +1,10 @@
-# Start Here — Orbit v0.1.0-alpha.60
+# Start Here — Orbit v0.1.0-alpha.61
 
-Orbit alpha.60 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
+Orbit alpha.61 is a cumulative deployable build. You do **not** deploy the older patches one-by-one.
 
 ## Alpha.60 direct video uploads and Channel Manager editing
 
-Apply migrations through `0045_short_video_uploads.sql`, deploy, and configure the optional R2 `STORAGE` binding to enable the Short-Form Video file picker. The selected MP4, MOV, or WebM streams to Orbit, is stored under a random guild-scoped key, and can be reused by the scheduled queue. The public HTTPS URL option remains available for existing workflows. Channel Manager now previews, backs up, and queues edits for existing categories and channels, including names, category membership, topics, slowmode, NSFW, bitrate, and user limits.
+Apply migrations through `0045_short_video_uploads.sql`, deploy, and use the included R2 `orbit_storage` binding for the `orbit-storage` bucket to enable the Short-Form Video file picker. The selected MP4, MOV, or WebM streams to Orbit, is stored under a random guild-scoped key, and can be reused by the scheduled queue. The public HTTPS URL option remains available for existing workflows. Channel Manager now previews, backs up, and queues edits for existing categories and channels, including names, category membership, topics, slowmode, NSFW, bitrate, and user limits.
 
 ## Alpha.59 publishing controls
 

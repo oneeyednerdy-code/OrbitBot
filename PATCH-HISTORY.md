@@ -42,6 +42,7 @@
 - **alpha.58** — Discord data refresh, creator feed/status controls, stream-end/VOD automations, editable queue workflows, manual leveling tools, Mentionable-role repair, and large-server search
 - **alpha.59** — TikTok OAuth/video relay, separate short-form video publishing queue, YouTube/TikTok/Instagram API connections, platform-aware social text limits, and explicit Discord post-now/schedule controls
 - **alpha.60** — Direct short-form video file uploads through R2, public media serving for provider retrieval, and guarded editing of existing Discord categories and channels
+- **alpha.61** — Bound direct video uploads to the `orbit-storage` R2 bucket through the Wrangler-generated `orbit_storage` binding, while retaining compatibility with older `STORAGE` deployments
 # Orbit patch history
 
 ## 0.1.0-alpha.37 — Discord Reliability Baseline
