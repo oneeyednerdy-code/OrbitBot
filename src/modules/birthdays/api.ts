@@ -1,5 +1,6 @@
 import type { Env } from '../../types';
 import { json } from '../../http/responses';
+import { discord } from '../../discord/client';
 
 const DEFAULT_MESSAGE = '🎂 Happy birthday, {user}! We hope you have a wonderful day!';
 export async function birthdaysApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
@@ -18,8 +19,8 @@ export async function birthdaysApi(request: Request, env: Env, guildId: string, 
     if (!validTimezone(timezone)) return json({ error: 'invalid_timezone', detail: 'Use a valid IANA timezone such as America/Chicago.' }, 400);
     if (body.enabled && !/^\d+$/.test(String(body.channel_id || ''))) return json({ error: 'birthday_channel_required' }, 400);
     const message = String(body.message || DEFAULT_MESSAGE).trim().slice(0, 2000);
-    await env.DB.prepare(`INSERT INTO birthday_configs(guild_id,enabled,channel_id,ping_role_id,message,timezone,updated_by,updated_at) VALUES(?,?,?,?,?,?,?,?)
-      ON CONFLICT(guild_id) DO UPDATE SET enabled=excluded.enabled,channel_id=excluded.channel_id,ping_role_id=excluded.ping_role_id,message=excluded.message,timezone=excluded.timezone,updated_by=excluded.updated_by,updated_at=excluded.updated_at`)
+    await env.DB.prepare(`INSERT INTO birthday_configs(guild_id,enabled,channel_id,ping_role_id,message,timezone,updated_by,updated_at,panel_channel_id,panel_message_id) VALUES(?,?,?,?,?,?,?,?,NULL,NULL)
+      ON CONFLICT(guild_id) DO UPDATE SET enabled=excluded.enabled,channel_id=excluded.channel_id,ping_role_id=excluded.ping_role_id,message=excluded.message,timezone=excluded.timezone,updated_by=excluded.updated_by,updated_at=excluded.updated_at,panel_channel_id=COALESCE(excluded.panel_channel_id,birthday_configs.panel_channel_id),panel_message_id=birthday_configs.panel_message_id`)
       .bind(guildId, body.enabled ? 1 : 0, body.channel_id || null, body.ping_role_id || null, message || DEFAULT_MESSAGE, timezone, actorId, now).run();
     return json({ ok: true });
   }
@@ -38,6 +39,18 @@ export async function birthdaysApi(request: Request, env: Env, guildId: string, 
     return json({ ok: true });
   }
   if (op === 'toggle_entry') { await env.DB.prepare('UPDATE birthday_entries SET enabled=?,updated_at=? WHERE guild_id=? AND id=?').bind(body.enabled ? 1 : 0, now, guildId, Number(body.id)).run(); return json({ ok: true }); }
+  if (op === 'post_panel') {
+    const config = await env.DB.prepare('SELECT * FROM birthday_configs WHERE guild_id=?').bind(guildId).first<any>();
+    const channelId = String(body.panel_channel_id || config?.panel_channel_id || '');
+    if (!/^\d+$/.test(channelId)) return json({ error: 'birthday_panel_channel_required', detail: 'Choose a channel for the registration panel.' }, 400);
+    const payload = { content: '🎂 **Birthday registration**\nUse the buttons below to privately register, update, or remove your birthday. Orbit stores only your month and day.', components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Register / Update Birthday', custom_id: 'orbit_birthday_register' }, { type: 2, style: 4, label: 'Remove My Birthday', custom_id: 'orbit_birthday_remove' }] }], allowed_mentions: { parse: [] } };
+    const path = config?.panel_message_id && String(config.panel_channel_id) === channelId ? `/channels/${channelId}/messages/${config.panel_message_id}` : `/channels/${channelId}/messages`;
+    const response = await discord(env, path, { method: config?.panel_message_id && String(config.panel_channel_id) === channelId ? 'PATCH' : 'POST', body: JSON.stringify(payload) });
+    if (!response.ok) return json({ error: 'birthday_panel_failed', detail: `Discord returned HTTP ${response.status}.` }, 400);
+    const message = await response.json<any>();
+    await env.DB.prepare('UPDATE birthday_configs SET panel_channel_id=?,panel_message_id=?,updated_by=?,updated_at=? WHERE guild_id=?').bind(channelId, String(message.id), actorId, now, guildId).run();
+    return json({ ok: true });
+  }
   return json({ error: 'unknown_operation' }, 400);
 }
 function validBirthday(month: number, day: number): boolean { if (!Number.isInteger(month) || !Number.isInteger(day) || month < 1 || month > 12 || day < 1 || day > 31) return false; const date = new Date(2024, month - 1, day); return date.getFullYear() === 2024 && date.getMonth() === month - 1 && date.getDate() === day; }

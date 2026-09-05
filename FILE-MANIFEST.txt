@@ -71,6 +71,7 @@ migrations/0047_social_images_and_role_pings.sql
 migrations/0048_social_composer_v2.sql
 migrations/0049_counting.sql
 migrations/0050_birthdays.sql
+migrations/0051_birthday_panel.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -171,6 +172,7 @@ RELEASE-NOTES-0.1.0-alpha.69.md
 RELEASE-NOTES-0.1.0-alpha.70.md
 RELEASE-NOTES-0.1.0-alpha.71.md
 RELEASE-NOTES-0.1.0-alpha.72.md
+RELEASE-NOTES-0.1.0-alpha.73.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -194,6 +196,7 @@ src/modules/automation/api.ts
 src/modules/automation/engine.ts
 src/modules/automation/policy.js
 src/modules/birthdays/api.ts
+src/modules/birthdays/interactions.ts
 src/modules/birthdays/service.ts
 src/modules/bug-reports/api.ts
 src/modules/channel-manager/api.ts

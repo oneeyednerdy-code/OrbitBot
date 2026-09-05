@@ -70,7 +70,7 @@ async function validateMutationResources(request:Request,env:Env,guildId:string,
   if(action==='creator'){add(channels,body.discord_channel_id);add(roles,body.required_role_id,body.mention_role_id);}
   if(action==='events'){add(channels,body.discord_channel_id);add(roles,body.ping_role_id);}
   if(action==='counting'&&(!body.op||body.op==='save'))add(channels,body.channel_id);
-  if(action==='birthdays'&&body.op==='save_config'){add(channels,body.channel_id);add(roles,body.ping_role_id);}
+  if(action==='birthdays'&&(body.op==='save_config'||body.op==='post_panel')){add(channels,body.channel_id,body.panel_channel_id);add(roles,body.ping_role_id);}
   if(!channels.length&&!roles.length)return null;
   const resources=await loadGuildResources(env,guildId,{channels:channels.length>0,roles:roles.length>0});
   if(!resources.ok)return json(resources,resources.status);

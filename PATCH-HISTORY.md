@@ -46,6 +46,7 @@
 - **alpha.62** — Added server-owner-only My Stream Twitch OAuth, selected Discord destination and role ping controls, editable live messages, reconnect/delete actions, encrypted owner account linkage, and duplicate-safe stream-ID polling
 - **alpha.71** — Added the configurable Discord Counting module with Gateway validation, alternating-user and reset rules, reactions, activity history, and dashboard controls
 - **alpha.72** — Added private month/day birthday registration, annual timezone-aware announcements, optional role pings, opt-out controls, and duplicate protection
+- **alpha.73** — Added a Discord birthday registration panel with private modal registration and removal controls
 # Orbit patch history
 
 ## 0.1.0-alpha.37 — Discord Reliability Baseline
