@@ -47,7 +47,7 @@ export async function renderCounting(message = '') {
     $('#stopCounting')?.addEventListener('click', () => runAction($('#stopCounting'), 'Turning off…', async () => { await action(guildId, 'stop'); renderCounting('Counting turned off.'); }));
     $('#startCounting')?.addEventListener('click', () => runAction($('#startCounting'), 'Starting…', async () => { await action(guildId, 'continue'); renderCounting('Counting is active.'); }));
   } catch (error) {
-    if (state.guildId === guildId && state.page === 'counting') renderError(`Counting failed (${error.payload?.detail || error.message}).`);
+    if (state.guildId === guildId && state.page === 'counting') renderError(formatCountingError(error));
   }
 }
 
@@ -61,6 +61,12 @@ async function runAction(button, pending, work) {
   button.disabled = true;
   button.textContent = pending;
   try { await work(); }
-  catch (error) { const status = $('#countingStatus'); if (status) { status.className = 'notice error'; status.textContent = error.payload?.detail || `Request failed (${error.message}).`; } }
+  catch (error) { const status = $('#countingStatus'); if (status) { status.className = 'notice error'; status.textContent = formatCountingError(error); } }
   finally { if (button.isConnected) { button.disabled = false; button.textContent = label; } }
+}
+
+function formatCountingError(error) {
+  const detail = error?.payload?.detail || `Request failed (${error?.message || 'unknown error'}).`;
+  const requestId = error?.payload?.request_id;
+  return requestId ? `${detail} Reference: ${requestId}` : detail;
 }

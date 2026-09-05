@@ -5,6 +5,21 @@ const DEFAULT_WRONG_MESSAGE = 'That was not the next number. The count resets to
 const DEFAULT_SAME_USER_MESSAGE = 'Let someone else count next, {user}.';
 
 export async function countingApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
+  try {
+    return await countingApiInternal(request, env, guildId, actorId);
+  } catch (error: any) {
+    if (isCountingSchemaError(error)) {
+      console.error('counting schema is unavailable', { guildId, name: error?.name, message: error?.message });
+      return json({
+        error: 'counting_migration_required',
+        detail: 'Counting storage is not ready on this deployment. Apply the pending D1 migrations, including 0049_counting.sql, with `npm run db:remote`, then retry.',
+      }, 503);
+    }
+    throw error;
+  }
+}
+
+async function countingApiInternal(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method === 'GET') {
     const [config, activity] = await Promise.all([
       env.DB.prepare('SELECT * FROM counting_configs WHERE guild_id=?').bind(guildId).first(),
@@ -45,7 +60,7 @@ export async function countingApi(request: Request, env: Env, guildId: string, a
       guild_id,enabled,channel_id,start_number,current_number,require_alternating,numbers_only,reset_on_mistake,
       delete_invalid_messages,correct_reaction,wrong_reaction,wrong_message,same_user_message,last_user_id,last_message_id,
       correct_count,mistake_count,highest_number,last_mistake_at,updated_by,created_at,updated_at)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,NULL,NULL,0,0,?,?,?,?,?)
+    VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,NULL,NULL,0,0,?,NULL,?,?,?)
     ON CONFLICT(guild_id) DO UPDATE SET enabled=excluded.enabled,channel_id=excluded.channel_id,start_number=excluded.start_number,
       current_number=excluded.current_number,require_alternating=excluded.require_alternating,numbers_only=excluded.numbers_only,
       reset_on_mistake=excluded.reset_on_mistake,delete_invalid_messages=excluded.delete_invalid_messages,
@@ -54,8 +69,13 @@ export async function countingApi(request: Request, env: Env, guildId: string, a
     .bind(guildId, enabled ? 1 : 0, channelId || null, startNumber, startNumber, body.require_alternating !== false ? 1 : 0,
       body.numbers_only !== false ? 1 : 0, body.reset_on_mistake !== false ? 1 : 0, body.delete_invalid_messages ? 1 : 0,
       correctReaction || '✅', wrongReaction || '❌', wrongMessage || DEFAULT_WRONG_MESSAGE, sameUserMessage || DEFAULT_SAME_USER_MESSAGE,
-      startNumber, null, actorId, now, now).run();
+      startNumber, actorId, now, now).run();
   return json({ ok: true, reset_to: startNumber });
+}
+
+function isCountingSchemaError(error: any): boolean {
+  const message = String(error?.message || error || '');
+  return /no such table|no such column|has no column named|database schema has changed|SQLITE_SCHEMA/i.test(message);
 }
 
 function defaultConfig() {

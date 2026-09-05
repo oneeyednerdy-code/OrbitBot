@@ -14,6 +14,9 @@ test('counting module is wired as a guarded Gateway-backed Discord module', asyn
   assert.match(service, /counting_activity/);
   assert.match(service, /allowed_mentions|pingUserIds/);
   assert.match(api, /counting_channel_required/);
+  assert.match(api, /counting_migration_required/);
+  assert.match(api, /0049_counting\.sql/);
+  assert.match(api, /VALUES\(\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,\?,NULL,NULL,0,0,\?,NULL,\?,\?,\?\)/);
   assert.match(api, /operation === 'reset'/);
   assert.match(migration, /counting_configs/);
   assert.match(migration, /counting_activity/);

@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.73 — Deploy Me First
+# Orbit v0.1.0-alpha.76 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. Deploy the cumulative source and apply pending migrations through `0051_birthday_panel.sql`. Alpha.73 adds a Discord registration panel with private birthday modal controls while retaining alpha.72 birthday announcements and alpha.71 Counting.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. Deploy the cumulative source and apply pending migrations through `0051_birthday_panel.sql`. Alpha.76 fixes Counting save failures when the deployed D1 database has not applied `0049_counting.sql` and makes the failure actionable.
 
 ## 1. Prerequisites
 
