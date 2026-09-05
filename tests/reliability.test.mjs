@@ -309,7 +309,7 @@ test('server search can load channel counts without replacing the current sessio
   assert.match(api,/listManageableGuilds\(request, env, session\)/);
   assert.match(app,/loadServerChannelCounts/);
   assert.match(app,/serverSearch/);
-  assert.match(index,/Find large servers/);
+  assert.match(index,/Sort by size/);
 });
 
 test('public legal pages and footer links are available for OAuth consent',()=>{

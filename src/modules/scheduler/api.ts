@@ -5,7 +5,7 @@ import { loadGuildResources, validateChannelIds, validateRoleIds } from '../../d
 import { botTopRolePosition } from '../../discord/permissions';
 
 export async function schedulerApi(request:Request,env:Env,guildId:string,actorId:string):Promise<Response>{
-  if(request.method==='GET'){const [posts,templates,runs]=await Promise.all([env.DB.prepare('SELECT * FROM scheduled_posts WHERE guild_id=? ORDER BY scheduled_for ASC LIMIT 250').bind(guildId).all(),env.DB.prepare('SELECT * FROM post_templates WHERE guild_id=? ORDER BY name').bind(guildId).all(),env.DB.prepare('SELECT * FROM scheduled_post_runs WHERE guild_id=? ORDER BY attempted_at DESC LIMIT 250').bind(guildId).all()]);return json({posts:posts.results,templates:templates.results,runs:runs.results});}
+ if(request.method==='GET'){const [posts,templates,runs]=await Promise.all([env.DB.prepare("SELECT * FROM scheduled_posts WHERE guild_id=? ORDER BY CASE WHEN status IN ('queued','sending') AND scheduled_for IS NOT NULL THEN 0 ELSE 1 END, CASE WHEN status IN ('queued','sending') AND scheduled_for IS NOT NULL THEN scheduled_for END ASC, COALESCE(updated_at,created_at) DESC LIMIT 250").bind(guildId).all(),env.DB.prepare('SELECT * FROM post_templates WHERE guild_id=? ORDER BY name').bind(guildId).all(),env.DB.prepare('SELECT * FROM scheduled_post_runs WHERE guild_id=? ORDER BY attempted_at DESC LIMIT 250').bind(guildId).all()]);return json({posts:posts.results,templates:templates.results,runs:runs.results});}
   if(request.method==='POST'){
     const body=await request.json<any>();const op=body.op||'create';const now=Date.now();
     if(op==='create'||op==='batch'){

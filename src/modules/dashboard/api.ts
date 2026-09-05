@@ -159,9 +159,14 @@ async function guildBootstrap(env: Env, guildId: string, guild: any): Promise<Re
   if (!rolesResponse.ok || !channelsResponse.ok || !botMemberResponse.ok) return json({ error: 'bot_not_in_guild', install_url: installUrl(env, guildId) }, 409);
 
   const roles = (await rolesResponse.json()) as any[];
-  const channels = ((await channelsResponse.json()) as any[])
+  const rawChannels = (await channelsResponse.json()) as any[];
+  const categories = new Map(rawChannels.filter(channel => Number(channel.type) === 4).map(channel => [String(channel.id), channel]));
+  const channels = rawChannels
     .filter(channel => channel.type === 0 || channel.type === 5)
-    .map(channel => ({ id: channel.id, name: channel.name, type: channel.type, parent_id: channel.parent_id }));
+    .map(channel => {
+      const parent = channel.parent_id ? categories.get(String(channel.parent_id)) : null;
+      return { id: channel.id, name: channel.name, type: channel.type, parent_id: channel.parent_id, position: Number(channel.position ?? 0), parent_name: parent?.name || '', parent_position: parent ? Number(parent.position ?? 0) : -1 };
+    });
   const botMember = (await botMemberResponse.json()) as any;
   const botTopRole = Math.max(...roles.filter(role => botMember.roles.includes(role.id)).map(role => role.position), 0);
   return json({

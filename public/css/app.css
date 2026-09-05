@@ -77,6 +77,7 @@ button,a,select,input{font:inherit}
 .login-card p{color:var(--muted);line-height:1.65;max-width:670px}
 .footer-note{font-size:12px;color:#777485;margin-top:26px}
 .mobile-menu{display:none}
+.sidebar-scrim{display:none}
 .divider{height:1px;background:var(--line);margin:20px 0}
 .skeleton{height:100px;border-radius:12px;background:linear-gradient(90deg,#15151c,#1b1a24,#15151c);background-size:200% 100%;animation:pulse 1.6s infinite}
 @keyframes pulse{to{background-position:-200% 0}
@@ -86,6 +87,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .sidebar{position:fixed;left:-270px;width:250px;z-index:20;transition:left .2s}
 .sidebar.open{left:0}
 .mobile-menu{display:inline-flex}
+.sidebar-scrim{display:block;position:fixed;inset:0;z-index:19;border:0;background:rgba(0,0,0,.58);cursor:pointer}
 .topbar{padding:0 18px}
 .content{padding:26px 18px 60px}
 .span-3,.span-4,.span-5,.span-6,.span-7,.span-8{grid-column:span 12}

@@ -84,6 +84,7 @@ public/js/app.js
 public/js/core.js
 public/js/diagnostics-drawer.js
 public/js/gateway-recovery.js
+public/js/navigation.js
 public/js/pages.js
 public/js/pages/applications.js
 public/js/pages/automation.js
@@ -176,6 +177,7 @@ RELEASE-NOTES-0.1.0-alpha.73.md
 RELEASE-NOTES-0.1.0-alpha.74.md
 RELEASE-NOTES-0.1.0-alpha.75.md
 RELEASE-NOTES-0.1.0-alpha.76.md
+RELEASE-NOTES-0.1.0-alpha.77.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -274,6 +276,7 @@ src/version.ts
 START-HERE.md
 tests/community-engagement.test.mjs
 tests/counting.test.mjs
+tests/navigation.test.mjs
 tests/recurrence.test.mjs
 tests/reliability.test.mjs
 tests/security-regressions.test.mjs

@@ -2,6 +2,7 @@ export const state={me:null,guilds:[],guildId:null,bundle:null,page:'overview',c
 export const clientDiagnostics={errors:[],networkFailures:[],requests:[]};
 export const $=selector=>document.querySelector(selector);
 export const escapeHtml=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+const collator=new Intl.Collator(undefined,{numeric:true,sensitivity:'base'});
 let pageController=null;
 
 export function beginPageRender(){
@@ -57,7 +58,11 @@ export async function api(url,options={}){
   return body;
 }
 
-export function usableRoles(){return (state.bundle?.roles||[]).filter(role=>role.name!=='@everyone'&&!role.managed).sort((a,b)=>b.position-a.position);}
+export function sortGuilds(guilds=[],mode='name',activeId=''){return [...guilds].sort((a,b)=>{if(mode==='size'){const countA=Number.isFinite(Number(a.channel_count))?Number(a.channel_count):-1,countB=Number.isFinite(Number(b.channel_count))?Number(b.channel_count):-1;if(countA!==countB)return countB-countA;}else{const activeA=String(a.id)===String(activeId)?0:1,activeB=String(b.id)===String(activeId)?0:1;if(activeA!==activeB)return activeA-activeB;}return collator.compare(String(a.name||''),String(b.name||''))||collator.compare(String(a.id||''),String(b.id||''));});}
+export function sortChannels(channels=[]){return [...channels].sort((a,b)=>{const parentPositionA=Number.isFinite(Number(a.parent_position))?Number(a.parent_position):(a.parent_id?Number.MAX_SAFE_INTEGER:-1),parentPositionB=Number.isFinite(Number(b.parent_position))?Number(b.parent_position):(b.parent_id?Number.MAX_SAFE_INTEGER:-1);return parentPositionA-parentPositionB||collator.compare(String(a.parent_name||''),String(b.parent_name||''))||Number(a.position??Number.MAX_SAFE_INTEGER)-Number(b.position??Number.MAX_SAFE_INTEGER)||collator.compare(String(a.name||''),String(b.name||''))||collator.compare(String(a.id||''),String(b.id||''));});}
+export function sortRoles(roles=[]){return [...roles].sort((a,b)=>{const managedA=a.managed?1:0,managedB=b.managed?1:0;return managedA-managedB||Number(b.position??-1)-Number(a.position??-1)||collator.compare(String(a.name||''),String(b.name||''))||collator.compare(String(a.id||''),String(b.id||''));});}
+export function normalizeBundle(bundle){if(!bundle)return bundle;return {...bundle,channels:sortChannels(bundle.channels||[]),roles:sortRoles(bundle.roles||[])};}
+export function usableRoles(){return sortRoles((state.bundle?.roles||[]).filter(role=>role.name!=='@everyone'&&!role.managed));}
 export async function loadMemberNames(ids){const unique=[...new Set((ids||[]).map(String).filter(id=>/^\d+$/.test(id)))].slice(0,100);if(!unique.length)return{};try{return (await api(`/api/guilds/${state.guildId}/member-lookup?ids=${encodeURIComponent(unique.join(','))}`)).members||{}}catch{return{}}}
 export function memberLabel(members,id){const key=String(id||'');return members?.[key]?.display_name||key;}
 export function title(value){return value.charAt(0).toUpperCase()+value.slice(1)}

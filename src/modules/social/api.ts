@@ -11,7 +11,7 @@ export const SOCIAL_TARGETS = ['discord', 'threads', 'bluesky', 'mastodon'];
 export async function socialApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method === 'GET') {
     const [posts, rows, templates, runs] = await Promise.all([
-      env.DB.prepare('SELECT * FROM social_publish_posts WHERE guild_id=? ORDER BY COALESCE(scheduled_for,created_at) DESC LIMIT 250').bind(guildId).all(),
+      env.DB.prepare("SELECT * FROM social_publish_posts WHERE guild_id=? ORDER BY CASE WHEN status IN ('scheduled','queued') AND scheduled_for IS NOT NULL THEN 0 ELSE 1 END, CASE WHEN status IN ('scheduled','queued') AND scheduled_for IS NOT NULL THEN scheduled_for END ASC, COALESCE(updated_at,created_at) DESC LIMIT 250").bind(guildId).all(),
       env.DB.prepare('SELECT * FROM social_integrations WHERE guild_id=? ORDER BY platform,account_label').bind(guildId).all(),
       env.DB.prepare('SELECT id,name,content,content_variants_json,targets_json,campaign,created_at,updated_at FROM social_templates WHERE guild_id=? ORDER BY name').bind(guildId).all(),
       env.DB.prepare('SELECT * FROM social_publish_runs WHERE guild_id=? ORDER BY attempted_at DESC LIMIT 500').bind(guildId).all(),
