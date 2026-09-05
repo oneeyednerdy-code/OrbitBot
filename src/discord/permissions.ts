@@ -115,5 +115,15 @@ export function permissionDoctor(input: {
   };
 }
 
-// Roadmap permissions only; Orbit intentionally does not request Administrator.
-export const ORBIT_INSTALL_PERMISSIONS = '17592454556692';
+// Orbit intentionally requests granular permissions and never Administrator.
+// Keep Create Events in this named list so new install URLs cannot silently omit it.
+export const ORBIT_INSTALL_PERMISSIONS = [
+  PERMISSION_BITS.ban_members,
+  PERMISSION_BITS.manage_channels,
+  PERMISSION_BITS.view_channel,
+  PERMISSION_BITS.send_messages,
+  PERMISSION_BITS.manage_messages,
+  PERMISSION_BITS.read_message_history,
+  PERMISSION_BITS.manage_roles,
+  PERMISSION_BITS.create_events,
+].reduce((mask, bit) => mask | bit, 0n).toString();

@@ -42,6 +42,17 @@ test('diagnostics separates optional checks and retained error history',async()=
   assert.match(source,/error_history/);
 });
 
+test('Scheduled Events permission is requested, preflight-checked, and repairable',async()=>{
+  const permissions=await readFile(new URL('../src/discord/permissions.ts',import.meta.url),'utf8');
+  const events=await readFile(new URL('../src/modules/events/api.ts',import.meta.url),'utf8');
+  const ui=await readFile(new URL('../public/js/pages/events.js',import.meta.url),'utf8');
+  assert.match(permissions,/PERMISSION_BITS\.create_events/);
+  assert.match(permissions,/ORBIT_INSTALL_PERMISSIONS/);
+  assert.match(events,/missing_create_events/);
+  assert.match(events,/install_url/);
+  assert.match(ui,/Reauthorize Orbit/);
+});
+
 test('Channel Manager offers an explicit missing-category recovery',async()=>{
   const api=await readFile(new URL('../src/modules/channel-manager/api.ts',import.meta.url),'utf8');
   const ui=await readFile(new URL('../public/js/pages/channel-manager.js',import.meta.url),'utf8');

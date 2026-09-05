@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.69 — Deploy Me First
+# Orbit v0.1.0-alpha.70 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. No new D1 migration is required for alpha.69; deploy the cumulative source and apply any pending migrations through `0048_social_composer_v2.sql`. Alpha.69 adds the first-class RSS feed manager with add/list/remove controls while retaining alpha.68 Ko-fi webhook and milestone management, alpha.67 Social Composer v2, and alpha.66 social image and Discord role-ping work.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. No new D1 migration is required for alpha.70; deploy the cumulative source and apply any pending migrations through `0048_social_composer_v2.sql`. Alpha.70 fixes Scheduled Events permission handling and gives existing installations a direct reauthorization path when Create Events is missing. It retains alpha.69 RSS management, alpha.68 Ko-fi webhook and milestone management, alpha.67 Social Composer v2, and alpha.66 social image and Discord role-ping work.
 
 ## 1. Prerequisites
 

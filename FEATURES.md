@@ -1,4 +1,4 @@
-# Orbit Feature Set — alpha.69 cumulative build
+# Orbit Feature Set — alpha.70 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
@@ -72,6 +72,7 @@
 - RSVP panels with Going / Maybe / Can't Go buttons, signup limits, and guild-scoped counts
 - Operations Center with live creators, open tickets, queued posts, upcoming events, pending applications, moderation activity, Shield and Lockdown status
 - Reliability Control Plane with Permission Doctor, role hierarchy checks, missing-resource drift, rate-limit buckets, gateway heartbeat state, and Action Center history
+- Scheduled Events permission preflight with direct reauthorization guidance when Create Events is missing
 
 ## Roadmap still intentionally not claimed as complete
 - YouTube Community publishing

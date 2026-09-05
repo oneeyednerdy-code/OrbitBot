@@ -2,14 +2,16 @@ import type { Env } from '../../types';
 import { discord } from '../../discord/client';
 import { json } from '../../http/responses';
 import { recordSystemError } from '../../repositories/errors';
+import { installUrl } from '../../auth/oauth';
+import { ADMINISTRATOR, effectivePermissions, PERMISSION_BITS } from '../../discord/permissions';
 
 export async function eventsApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
   if (request.method === 'GET') {
-    const rows = await env.DB.prepare(`SELECT e.*,
+    const [rows,eventPermission] = await Promise.all([env.DB.prepare(`SELECT e.*,
       (SELECT COUNT(*) FROM event_signups s WHERE s.event_id=e.id AND s.status='going') AS going_count,
       (SELECT COUNT(*) FROM event_signups s WHERE s.event_id=e.id AND s.status='maybe') AS maybe_count
-      FROM community_events e WHERE e.guild_id=? ORDER BY e.starts_at ASC`).bind(guildId).all();
-    return json({ events: rows.results });
+      FROM community_events e WHERE e.guild_id=? ORDER BY e.starts_at ASC`).bind(guildId).all(), eventPermissionStatus(env,guildId)]);
+    return json({ events: rows.results, event_permission: eventPermission });
   }
 
   if (request.method === 'POST') {
@@ -21,6 +23,11 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
     if (startMs <= Date.now() + 30_000) return json({ error: 'event_start_must_be_future', detail: 'Discord scheduled events need a future start time.' }, 400);
     if (!Number.isFinite(endMs) || endMs <= startMs) return json({ error: 'event_end_invalid', detail: 'End time must be after the start time.' }, 400);
     if (repeat && !body.create_discord_event) return json({ error: 'repeat_requires_discord_event', detail: 'Repeating events require Create Discord Scheduled Event to be enabled.' }, 400);
+
+    if (body.create_discord_event) {
+      const permission = await eventPermissionStatus(env, guildId);
+      if (!permission.ok) return json({ error: 'missing_create_events', detail: permission.detail, install_url: permission.install_url }, 403);
+    }
 
     const now = Date.now();
     const start = new Date(startMs).toISOString();
@@ -93,6 +100,24 @@ export async function eventsApi(request: Request, env: Env, guildId: string, act
     return json({ ok: true });
   }
   return json({ error: 'method_not_allowed' }, 405);
+}
+
+async function eventPermissionStatus(env: Env, guildId: string): Promise<{ ok: boolean; detail: string; install_url: string }> {
+  const install_url = installUrl(env, guildId);
+  try {
+    const [rolesResponse, memberResponse] = await Promise.all([
+      discord(env, `/guilds/${guildId}/roles`),
+      discord(env, `/guilds/${guildId}/members/${env.DISCORD_CLIENT_ID}`),
+    ]);
+    if (!rolesResponse.ok || !memberResponse.ok) return { ok: false, detail: 'Orbit could not verify its Discord permissions. Reauthorize Orbit, then run Diagnostics again.', install_url };
+    const roles = await rolesResponse.json<any[]>();
+    const member = await memberResponse.json<any>();
+    const permissions = effectivePermissions(guildId, roles, member);
+    const ok = (permissions & PERMISSION_BITS.create_events) !== 0n || (permissions & ADMINISTRATOR) !== 0n;
+    return { ok, detail: ok ? 'Orbit can create Discord Scheduled Events.' : 'Orbit is missing the Create Events permission required for Discord Scheduled Events. Reauthorize Orbit with the updated permission set, then try again.', install_url };
+  } catch {
+    return { ok: false, detail: 'Orbit could not verify its Discord permissions. Reauthorize Orbit, then run Diagnostics again.', install_url };
+  }
 }
 
 async function postRsvpPanel(env: Env, guildId: string, eventId: number, body: any): Promise<Response> {
