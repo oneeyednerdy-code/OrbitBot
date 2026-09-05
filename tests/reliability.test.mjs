@@ -107,13 +107,18 @@ test('Channel Manager can preview and queue edits for existing categories and ch
   const page=read('public/js/pages/channel-manager.js');
   assert.match(api,/preview-edit/);
   assert.match(api,/execute-edit/);
+  assert.match(api,/manual_channel_ids/);
+  assert.match(api,/resolveManualDeleteTargets/);
+  assert.match(api,/loadKnownSnapshotChannels/);
   assert.match(api,/must use an existing category/);
   assert.match(api,/automatic-edit/);
   assert.match(dispatch,/job\.operation==='edit'/);
   assert.match(dispatch,/channel_edit_failed/);
   assert.match(dispatch,/Missing Access \(50001\)/);
-  assert.match(dispatch,/View Channel and Manage Channels/);
+  assert.match(dispatch,/guild-level Manage Channels/);
   assert.match(page,/cmEditTarget/);
+  assert.match(page,/cmManualChannelIds/);
+  assert.match(page,/manual_channel_ids/);
   assert.match(page,/Queue Channel Edits/);
 });
 
