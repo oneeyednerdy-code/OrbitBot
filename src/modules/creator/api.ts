@@ -66,7 +66,7 @@ async function saveOwnerStream(env:Env,guildId:string,actorId:string,guild:any,b
  const badRole=validateRoleIds(resources,[mentionRoleId].filter(Boolean),{mentionable:true});if(badRole)return json({error:'mention_role_unavailable',detail:'The ping role must exist in this server and be marked Mentionable in Discord.'},400);
  const now=Date.now(),interval=Math.min(60,Math.max(5,Number(b.poll_interval_minutes||5)));
  await env.DB.prepare(`INSERT INTO owner_stream_alert_configs(guild_id,connection_id,discord_channel_id,mention_role_id,live_message,poll_interval_minutes,enabled,last_live_state,last_stream_id,last_checked_at,last_notified_at,last_error,updated_by,created_at,updated_at)
-   VALUES(?,?,?,?,?,?,?,NULL,NULL,NULL,NULL,NULL,?,?,?)
+   VALUES(?,?,?,?,?,?,?,0,NULL,NULL,NULL,NULL,?,?,?)
    ON CONFLICT(guild_id) DO UPDATE SET connection_id=excluded.connection_id,discord_channel_id=excluded.discord_channel_id,mention_role_id=excluded.mention_role_id,live_message=excluded.live_message,poll_interval_minutes=excluded.poll_interval_minutes,enabled=excluded.enabled,last_live_state=CASE WHEN owner_stream_alert_configs.connection_id<>excluded.connection_id THEN 0 ELSE owner_stream_alert_configs.last_live_state END,last_stream_id=CASE WHEN owner_stream_alert_configs.connection_id<>excluded.connection_id THEN NULL ELSE owner_stream_alert_configs.last_stream_id END,last_error=NULL,updated_by=excluded.updated_by,updated_at=excluded.updated_at`)
    .bind(guildId,connectionId,channelId,mentionRoleId||null,message,interval,enabled?1:0,actorId,now,now).run();
  return json({ok:true});

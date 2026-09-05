@@ -159,6 +159,7 @@ test('owner stream alerts are owner-only, Twitch-linked, and duplicate-safe',()=
   assert.match(page,/My Stream/);
   assert.match(page,/Connect \/ Reconnect Twitch/);
   assert.match(migration,/owner_stream_alert_configs/);
+  assert.match(api,/VALUES\(\?,\?,\?,\?,\?,\?,\?,0,NULL/);
 });
 
 test('automation and scheduler support editing, deletion, stream-end templates, and role mentionability repair',()=>{
