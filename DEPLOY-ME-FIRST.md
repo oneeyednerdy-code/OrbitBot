@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.68 — Deploy Me First
+# Orbit v0.1.0-alpha.69 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. No new D1 migration is required for alpha.68; deploy the cumulative source and apply any pending migrations through `0048_social_composer_v2.sql`. Alpha.68 adds owner-only Ko-fi verification-token setup, a copyable system webhook URL, legacy webhook compatibility, and milestone edit/enable/disable/delete management while retaining alpha.67 Social Composer v2 and alpha.66 social image and Discord role-ping work.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. No new D1 migration is required for alpha.69; deploy the cumulative source and apply any pending migrations through `0048_social_composer_v2.sql`. Alpha.69 adds the first-class RSS feed manager with add/list/remove controls while retaining alpha.68 Ko-fi webhook and milestone management, alpha.67 Social Composer v2, and alpha.66 social image and Discord role-ping work.
 
 ## 1. Prerequisites
 

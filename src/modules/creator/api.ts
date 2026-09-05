@@ -3,6 +3,7 @@ import { json } from '../../http/responses';
 import { discord } from '../../discord/client';
 import { loadGuildResources, validateChannelIds, validateRoleIds } from '../../discord/guild-resources';
 import { botTopRolePosition } from '../../discord/permissions';
+import { publicHttpsUrl } from '../../security/outbound-url';
 const defaultOwnerMessage='🔴 **{creator} is LIVE on Twitch!**\n{title}\n{url}';
 
 export async function creatorApi(request:Request,env:Env,guildId:string,actorId:string,guild:any):Promise<Response>{
@@ -24,10 +25,11 @@ export async function creatorApi(request:Request,env:Env,guildId:string,actorId:
    ]);
    ownerConfig=config||null;ownerConnections=connections.results||[];
   }
+  const sourceRows=rows.results as any[],rssFeeds=sourceRows.filter(row=>['rss','podcast'].includes(String(row.source_type)));
   const roleStates=states.results as any[],lastCheckedAt=roleStates.reduce((latest,row)=>Math.max(latest,Number(row.last_checked_at||0)),0);
-  return json({sources:rows.results,role_automation:automation||defaultAutomation(),role_automation_status:{configured:Boolean(automation),enabled:Number(automation?.enabled||0)===1,last_checked_at:lastCheckedAt||null,eligible_count:roleStates.filter(row=>Number(row.eligible)===1).length,live_count:roleStates.filter(row=>Number(row.last_live_state)===1).length,error_count:roleStates.filter(row=>row.last_error).length},directory_creators:creators.results,role_automation_states:states.results,owner_stream:guild?.owner===true?{owner_only:true,config:ownerConfig,connections:ownerConnections}:{owner_only:false}});
+  return json({sources:sourceRows,rss_feeds:rssFeeds,role_automation:automation||defaultAutomation(),role_automation_status:{configured:Boolean(automation),enabled:Number(automation?.enabled||0)===1,last_checked_at:lastCheckedAt||null,eligible_count:roleStates.filter(row=>Number(row.eligible)===1).length,live_count:roleStates.filter(row=>Number(row.last_live_state)===1).length,error_count:roleStates.filter(row=>row.last_error).length},directory_creators:creators.results,role_automation_states:states.results,owner_stream:guild?.owner===true?{owner_only:true,config:ownerConfig,connections:ownerConnections}:{owner_only:false}});
  }
-  if(request.method==='POST'){const b=await request.json<any>();
+  if(request.method==='POST'){let b=await request.json<any>();
   if(b.operation==='save_owner_stream')return saveOwnerStream(env,guildId,actorId,guild,b);
   if(b.operation==='delete_owner_stream')return deleteOwnerStream(env,guildId,guild);
   if(b.operation==='make_owner_role_mentionable'){
@@ -43,7 +45,16 @@ export async function creatorApi(request:Request,env:Env,guildId:string,actorId:
    ]);
    return json({ok:true});
   }
-  if(!['rss','podcast','tiktok','youtube','twitch'].includes(b.source_type)||!b.label||!b.source_value||!b.discord_channel_id)return json({error:'invalid_source'},400);const now=Date.now();
+  if(b.operation==='remove_rss'){
+   const id=Number(b.id);if(!Number.isInteger(id)||id<=0)return json({error:'invalid_source'},400);
+   const result=await env.DB.prepare("DELETE FROM creator_sources WHERE id=? AND guild_id=? AND source_type IN ('rss','podcast')").bind(id,guildId).run();
+   if(!result.meta.changes)return json({error:'rss_not_found'},404);
+   return json({ok:true});
+  }
+  if(b.operation==='add_rss')b={...b,source_type:'rss'};
+  if(!['rss','podcast','tiktok','youtube','twitch'].includes(b.source_type)||!b.label||!b.source_value||!b.discord_channel_id)return json({error:'invalid_source'},400);
+  if(['rss','podcast'].includes(String(b.source_type))&&!publicHttpsUrl(b.source_value))return json({error:'invalid_feed_url',detail:'RSS feeds must use a public HTTPS URL.'},400);
+  const now=Date.now();
   const resources=await loadGuildResources(env,guildId,{channels:true,roles:Boolean(b.mention_role_id)});if(!resources.ok)return json(resources,resources.status);const badChannel=validateChannelIds(resources,[b.discord_channel_id]);if(badChannel)return json(badChannel,badChannel.status);const badRole=validateRoleIds(resources,[b.mention_role_id].filter(Boolean),{mentionable:true});if(badRole)return json(badRole,badRole.status);
   if(b.id){await env.DB.prepare(`UPDATE creator_sources SET source_type=?,label=?,source_value=?,discord_channel_id=?,mention_role_id=?,live_message=?,offline_message=?,notify_live=?,notify_offline=?,vod_url=?,cooldown_minutes=?,enabled=?,updated_at=? WHERE id=? AND guild_id=?`).bind(b.source_type,String(b.label),String(b.source_value),String(b.discord_channel_id),b.mention_role_id||null,b.live_message||null,b.offline_message||null,b.notify_live===false?0:1,b.notify_offline?1:0,b.vod_url||null,Math.max(1,Number(b.cooldown_minutes||10)),b.enabled===false?0:1,now,Number(b.id),guildId).run();return json({ok:true});}
   const r=await env.DB.prepare(`INSERT INTO creator_sources(guild_id,source_type,label,source_value,discord_channel_id,mention_role_id,live_message,offline_message,notify_live,notify_offline,vod_url,cooldown_minutes,enabled,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,1,?,?)`).bind(guildId,b.source_type,String(b.label),String(b.source_value),String(b.discord_channel_id),b.mention_role_id||null,b.live_message||null,b.offline_message||null,b.notify_live===false?0:1,b.notify_offline?1:0,b.vod_url||null,Math.max(1,Number(b.cooldown_minutes||10)),now,now).run();return json({ok:true,id:Number(r.meta.last_row_id)});}

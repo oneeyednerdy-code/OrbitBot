@@ -152,6 +152,7 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .milestone-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:0}
 .milestone-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .milestone-row .btn{flex:0 0 auto}
+.rss-feed-url{display:block;margin-top:5px;overflow-wrap:anywhere;color:var(--muted);font-size:12px}
 @media(max-width:560px){.section-heading,.milestone-row{align-items:stretch;flex-direction:column}.milestone-row .btn,.milestone-actions{width:100%}.milestone-actions .btn{flex:1}}
 .content .card>label:not(.check):not(.choice-pill):not(.feature-choice){margin:13px 0}
 

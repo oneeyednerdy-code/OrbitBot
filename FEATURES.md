@@ -1,4 +1,4 @@
-# Orbit Feature Set — alpha.68 cumulative build
+# Orbit Feature Set — alpha.69 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
@@ -64,6 +64,7 @@
 - Short-Form Video file picker with server-side R2 storage plus public-HTTPS URL fallback
 - YouTube, TikTok, and Instagram API login connections with encrypted server-side credentials
 - Immediate or scheduled Discord posting from Social Management
+- RSS feed manager with public HTTPS validation, add, list, duplicate-safe polling, configurable Discord destination, optional role ping, custom announcement template, and remove controls
 
 ## Events & Operations
 - Community event management
