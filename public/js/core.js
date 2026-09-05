@@ -58,4 +58,6 @@ export async function api(url,options={}){
 }
 
 export function usableRoles(){return (state.bundle?.roles||[]).filter(role=>role.name!=='@everyone'&&!role.managed).sort((a,b)=>b.position-a.position);}
+export async function loadMemberNames(ids){const unique=[...new Set((ids||[]).map(String).filter(id=>/^\d+$/.test(id)))].slice(0,100);if(!unique.length)return{};try{return (await api(`/api/guilds/${state.guildId}/member-lookup?ids=${encodeURIComponent(unique.join(','))}`)).members||{}}catch{return{}}}
+export function memberLabel(members,id){const key=String(id||'');return members?.[key]?.display_name||key;}
 export function title(value){return value.charAt(0).toUpperCase()+value.slice(1)}

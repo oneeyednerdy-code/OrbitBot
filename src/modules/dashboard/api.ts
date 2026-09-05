@@ -33,6 +33,7 @@ import { connectionsApi } from '../connections/api';
 import { bugReportsApi } from '../bug-reports/api';
 import { channelManagerApi } from '../channel-manager/api';
 import { countingApi } from '../counting/api';
+import { memberLookupApi } from './member-lookup';
 import { birthdaysApi } from '../birthdays/api';
 import { shortVideoApi } from '../short-video/api';
 import { shortVideoUploadApi } from '../short-video/media';
@@ -96,6 +97,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'creator-directory') return creatorDirectoryApi(request, env, guildId);
   if (action === 'events') return eventsApi(request, env, guildId, session.user_id);
   if (action === 'counting') return countingApi(request, env, guildId, session.user_id);
+  if (action === 'member-lookup' && request.method === 'GET') return memberLookupApi(request, env, guildId);
   if (action === 'birthdays') return birthdaysApi(request, env, guildId, session.user_id);
   if (action === 'applications') return applicationsApi(request, env, guildId);
   if (action === 'health') return communityHealthApi(request, env, guildId);

@@ -1,4 +1,4 @@
-import { $, api, escapeHtml, state } from '../core.js';
+import { $, api, escapeHtml, loadMemberNames, memberLabel, state } from '../core.js';
 import { renderError } from './common.js';
 
 export async function renderCounting(message = '') {
@@ -6,12 +6,13 @@ export async function renderCounting(message = '') {
   $('#content').innerHTML = '<div class="eyebrow">COMMUNITY</div><h1 class="page-title">Counting</h1><p class="page-intro">Run a configurable counting game in one Discord channel. Orbit checks every message through the Gateway and keeps the count in D1.</p><div id="countingBody" class="empty">Loading…</div>';
   try {
     const data = await api(`/api/guilds/${guildId}/counting`);
+    const memberNames = await loadMemberNames((data.activity || []).map(x => x.user_id));
     if (state.guildId !== guildId || state.page !== 'counting' || !$('#countingBody')) return;
     const c = data.config || {};
     const channels = (state.bundle?.channels || []).filter(channel => [0, 5].includes(Number(channel.type)));
     const activity = Array.isArray(data.activity) ? data.activity : [];
     const channelOptions = `<option value="">Select channel…</option>${channels.map(channel => `<option value="${channel.id}" ${String(channel.id) === String(c.channel_id || '') ? 'selected' : ''}>#${escapeHtml(channel.name)}</option>`).join('')}`;
-    const activityMarkup = activity.length ? activity.map(item => `<div class="notice"><strong>${escapeHtml(item.result)}</strong> · ${escapeHtml(item.received_number == null ? '—' : item.received_number)}<br><span class="small">Expected ${escapeHtml(item.expected_number)} · User ${escapeHtml(item.user_id)} · ${new Date(item.created_at).toLocaleString()}</span></div>`).join('') : '<div class="empty">No counting activity yet.</div>';
+    const activityMarkup = activity.length ? activity.map(item => `<div class="notice"><strong>${escapeHtml(item.result)}</strong> · ${escapeHtml(item.received_number == null ? '—' : item.received_number)}<br><span class="small">Expected ${escapeHtml(item.expected_number)} · ${escapeHtml(memberLabel(memberNames, item.user_id))} [${escapeHtml(item.user_id)}] · ${new Date(item.created_at).toLocaleString()}</span></div>`).join('') : '<div class="empty">No counting activity yet.</div>';
     $('#countingBody').outerHTML = `<div class="grid">
       <section class="card span-7">
         <h2>Counting module</h2>

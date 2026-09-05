@@ -30,7 +30,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/guilds') return listManageableGuilds(request, env, session);
   if (url.pathname === '/api/operator/bugs') return operatorBugApi(request, env, session.user_id);
 
-  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|counting|birthdays|kofi|creator|social|social-upload|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
+  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|member-lookup|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|counting|birthdays|kofi|creator|social|social-upload|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
   if (!match) return json({ error: 'not_found' }, 404);
   const guildId = match[1];
   const action = match[2] ?? 'config';

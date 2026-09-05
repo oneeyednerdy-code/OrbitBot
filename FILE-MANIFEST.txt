@@ -173,6 +173,8 @@ RELEASE-NOTES-0.1.0-alpha.70.md
 RELEASE-NOTES-0.1.0-alpha.71.md
 RELEASE-NOTES-0.1.0-alpha.72.md
 RELEASE-NOTES-0.1.0-alpha.73.md
+RELEASE-NOTES-0.1.0-alpha.74.md
+RELEASE-NOTES-0.1.0-alpha.75.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -216,6 +218,7 @@ src/modules/creator-safety/api.ts
 src/modules/creator/api.ts
 src/modules/creator/poll.ts
 src/modules/dashboard/api.ts
+src/modules/dashboard/member-lookup.ts
 src/modules/diagnostics/api.ts
 src/modules/diagnostics/catalog.ts
 src/modules/events/api.ts

@@ -1,6 +1,7 @@
 import type { Env } from '../../types';
 import { json } from '../../http/responses';
 import { discord } from '../../discord/client';
+import { permissionDoctor } from '../../discord/permissions';
 
 const DEFAULT_MESSAGE = '🎂 Happy birthday, {user}! We hope you have a wonderful day!';
 export async function birthdaysApi(request: Request, env: Env, guildId: string, actorId: string): Promise<Response> {
@@ -43,10 +44,15 @@ export async function birthdaysApi(request: Request, env: Env, guildId: string, 
     const config = await env.DB.prepare('SELECT * FROM birthday_configs WHERE guild_id=?').bind(guildId).first<any>();
     const channelId = String(body.panel_channel_id || config?.panel_channel_id || '');
     if (!/^\d+$/.test(channelId)) return json({ error: 'birthday_panel_channel_required', detail: 'Choose a channel for the registration panel.' }, 400);
+    const permission = await panelPermission(env, guildId, channelId);
+    if (!permission.ok) return json({ error: 'birthday_panel_permissions', detail: permission.detail, missing_permissions: permission.blocking }, 403);
     const payload = { content: '🎂 **Birthday registration**\nUse the buttons below to privately register, update, or remove your birthday. Orbit stores only your month and day.', components: [{ type: 1, components: [{ type: 2, style: 1, label: 'Register / Update Birthday', custom_id: 'orbit_birthday_register' }, { type: 2, style: 4, label: 'Remove My Birthday', custom_id: 'orbit_birthday_remove' }] }], allowed_mentions: { parse: [] } };
     const path = config?.panel_message_id && String(config.panel_channel_id) === channelId ? `/channels/${channelId}/messages/${config.panel_message_id}` : `/channels/${channelId}/messages`;
     const response = await discord(env, path, { method: config?.panel_message_id && String(config.panel_channel_id) === channelId ? 'PATCH' : 'POST', body: JSON.stringify(payload) });
-    if (!response.ok) return json({ error: 'birthday_panel_failed', detail: `Discord returned HTTP ${response.status}.` }, 400);
+    if (!response.ok) {
+      let detail: any = {}; try { detail = await response.clone().json<any>(); } catch {}
+      return json({ error: 'birthday_panel_failed', detail: detail?.message || `Discord returned HTTP ${response.status}.`, discord_code: detail?.code || null }, 400);
+    }
     const message = await response.json<any>();
     await env.DB.prepare('UPDATE birthday_configs SET panel_channel_id=?,panel_message_id=?,updated_by=?,updated_at=? WHERE guild_id=?').bind(channelId, String(message.id), actorId, now, guildId).run();
     return json({ ok: true });
@@ -55,3 +61,12 @@ export async function birthdaysApi(request: Request, env: Env, guildId: string, 
 }
 function validBirthday(month: number, day: number): boolean { if (!Number.isInteger(month) || !Number.isInteger(day) || month < 1 || month > 12 || day < 1 || day > 31) return false; const date = new Date(2024, month - 1, day); return date.getFullYear() === 2024 && date.getMonth() === month - 1 && date.getDate() === day; }
 function validTimezone(value: string): boolean { try { new Intl.DateTimeFormat('en-US', { timeZone: value }).format(); return true; } catch { return false; } }
+
+async function panelPermission(env: Env, guildId: string, channelId: string): Promise<{ ok: boolean; detail: string; blocking: string[] }> {
+  try {
+    const [channelResponse, rolesResponse, memberResponse] = await Promise.all([discord(env, `/channels/${channelId}`), discord(env, `/guilds/${guildId}/roles`), discord(env, `/guilds/${guildId}/members/${env.DISCORD_CLIENT_ID}`)]);
+    if (!channelResponse.ok || !rolesResponse.ok || !memberResponse.ok) return { ok: false, detail: 'Orbit could not verify access to the selected channel. Check that Orbit can view the channel, then try again.', blocking: ['view_channel', 'send_messages'] };
+    const doctor = permissionDoctor({ guildId, channel: await channelResponse.json<any>(), roles: await rolesResponse.json<any[]>(), botMember: await memberResponse.json<any>(), requiredPermissions: ['view_channel', 'send_messages'] });
+    return { ok: doctor.ok, detail: doctor.ok ? 'Orbit can post the registration panel.' : `Orbit is missing: ${doctor.blocking.join(', ')} in the selected channel.`, blocking: doctor.blocking };
+  } catch { return { ok: false, detail: 'Orbit could not verify access to the selected channel. Check View Channel and Send Messages permissions.', blocking: ['view_channel', 'send_messages'] }; }
+}
