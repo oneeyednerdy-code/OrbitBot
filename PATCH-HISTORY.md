@@ -190,3 +190,12 @@
 
 - **alpha.63** — Added public Privacy Policy and Terms of Service pages with footer links for Google OAuth consent setup.
 - **alpha.64** — Fixed owner-only My Stream saves inserting `NULL` into the required `last_live_state` field.
+
+## 0.1.0-alpha.65 — Application Panels + Two-Page Forms
+- Added Post to Channel controls for saved Applications & Appeals forms.
+- Added editable Discord panel title, description, destination, button label, update/repair, move, and delete behavior.
+- Added Discord-native form interactions with one modal for 1–5 questions.
+- Added a Discord-compliant Page 1 → private Continue button → Page 2 flow for 6–10 questions.
+- Added temporary D1 page-state sessions with 30-minute expiry and per-user/server/form ownership checks.
+- Added duplicate-resistant Discord submissions and application audit events.
+- Added migration `0047_application_panels_and_paging.sql`.

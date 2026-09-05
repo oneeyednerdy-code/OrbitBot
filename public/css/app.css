@@ -159,7 +159,9 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .question-row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:9px;padding:9px;border:1px solid var(--line);border-radius:11px;background:#0d0d13}
 .question-number{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:rgba(139,92,246,.12);color:#c4b5fd;font-weight:900}
 .question-row .btn{min-height:42px}
-.application-form-row{display:flex;align-items:center;justify-content:space-between;gap:14px}
+.application-form-row{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+.application-form-row>div:first-child{flex:1 1 260px}
+.application-form-row .panel-editor{flex:1 0 100%;width:100%}
 .connection-summary{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
 @media(max-width:620px){.question-row{grid-template-columns:30px minmax(0,1fr)}.question-row .questionRemove{grid-column:2}.application-form-row{align-items:stretch;flex-direction:column}}
 .diag-recent-errors{display:grid;gap:8px;margin-top:18px}.diag-error-row{display:grid;gap:5px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0b0b11}.diag-error-row code{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:#aaa6b6}

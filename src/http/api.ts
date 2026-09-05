@@ -67,6 +67,7 @@ async function validateMutationResources(request:Request,env:Env,guildId:string,
   if(action==='creator-safety'&&body.op==='save'){add(channels,body.channel_ids,body.alert_channel_id);}
   if(action==='creator'){add(channels,body.discord_channel_id);add(roles,body.required_role_id,body.mention_role_id);}
   if(action==='events'){add(channels,body.discord_channel_id);add(roles,body.ping_role_id);}
+  if(action==='applications'){add(channels,body.channel_id,body.destination_channel_id);add(roles,body.staff_role_id);}
   if(!channels.length&&!roles.length)return null;
   const resources=await loadGuildResources(env,guildId,{channels:channels.length>0,roles:roles.length>0});
   if(!resources.ok)return json(resources,resources.status);

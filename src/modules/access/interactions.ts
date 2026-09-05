@@ -8,6 +8,7 @@ import { handleRoleInteraction } from '../roles/interactions';
 import { handleTicketInteraction } from '../tickets/interactions';
 import { createVerificationSession } from '../verification/session';
 import { handleEventInteraction } from '../events/interactions';
+import { handleApplicationInteraction } from '../applications/interactions';
 
 export async function handleInteractions(request: Request, env: Env): Promise<Response> {
   const signature = request.headers.get('x-signature-ed25519');
@@ -20,6 +21,8 @@ export async function handleInteractions(request: Request, env: Env): Promise<Re
   try { interaction = JSON.parse(raw); }
   catch { return new Response('invalid json', { status: 400 }); }
   if (interaction.type === 1) return json({ type: 1 });
+  const applicationResponse = await handleApplicationInteraction(env, interaction);
+  if (applicationResponse) return json(applicationResponse);
   const ticketResponse = await handleTicketInteraction(env, interaction);
   if (ticketResponse) return json(ticketResponse);
   const roleResponse = await handleRoleInteraction(env, interaction);

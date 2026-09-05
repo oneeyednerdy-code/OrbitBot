@@ -97,4 +97,5 @@ Those remain future work rather than fake "working" buttons.
 - Discord Scheduled Event permission/error diagnostics.
 - Role panel deletion removes the Discord panel message but preserves already assigned member roles.
 - Applications/Appeals form editor with up to 10 add/remove questions and edit-in-place support.
+- Applications/Appeals Discord panels with Post to Channel controls and a two-page modal flow for 6–10 questions.
 - Simplified onboarding with no Discord community-type question.

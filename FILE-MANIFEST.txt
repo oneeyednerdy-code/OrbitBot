@@ -67,6 +67,7 @@ migrations/0043_tiktok_announcements.sql
 migrations/0044_short_video_posts.sql
 migrations/0045_short_video_uploads.sql
 migrations/0046_owner_stream_alerts.sql
+migrations/0047_application_panels_and_paging.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -158,6 +159,7 @@ RELEASE-NOTES-0.1.0-alpha.61.md
 RELEASE-NOTES-0.1.0-alpha.62.md
 RELEASE-NOTES-0.1.0-alpha.63.md
 RELEASE-NOTES-0.1.0-alpha.64.md
+RELEASE-NOTES-0.1.0-alpha.65.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -177,6 +179,7 @@ src/index.ts
 src/modules/access/interactions.ts
 src/modules/access/service.ts
 src/modules/applications/api.ts
+src/modules/applications/interactions.ts
 src/modules/automation/api.ts
 src/modules/automation/engine.ts
 src/modules/automation/policy.js
@@ -246,6 +249,7 @@ src/security/outbound-url.ts
 src/types.ts
 src/version.ts
 START-HERE.md
+tests/application-panels.test.mjs
 tests/community-engagement.test.mjs
 tests/recurrence.test.mjs
 tests/reliability.test.mjs

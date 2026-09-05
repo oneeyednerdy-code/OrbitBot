@@ -91,7 +91,7 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'shield') return shieldApi(request, env, guildId, session.user_id);
   if (action === 'creator-directory') return creatorDirectoryApi(request, env, guildId);
   if (action === 'events') return eventsApi(request, env, guildId, session.user_id);
-  if (action === 'applications') return applicationsApi(request, env, guildId);
+  if (action === 'applications') return applicationsApi(request, env, guildId, session.user_id);
   if (action === 'health') return communityHealthApi(request, env, guildId);
   if (action === 'creator-safety') return creatorSafetyApi(request, env, guildId, session.user_id);
   if (action === 'operations') return operationsApi(request, env, guildId);
