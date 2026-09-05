@@ -27,13 +27,13 @@ export async function channelManagerApi(request:Request,env:Env,guildId:string,a
 }
 
 async function loadManager(env:Env,guildId:string):Promise<Response>{
-  const [channels,guild,dependencies,jobs,snapshots]=await Promise.all([
-    getChannels(env,guildId),getDiscordGuild(env,guildId),scanDependencies(env,guildId),
+  const [channels,guild,roles,dependencies,jobs,snapshots]=await Promise.all([
+    getChannels(env,guildId),getDiscordGuild(env,guildId),getRoles(env,guildId),scanDependencies(env,guildId),
     env.DB.prepare('SELECT id,operation,status,total_items,completed_items,failed_items,reason,snapshot_id,action_job_id,created_at,started_at,finished_at,error_summary_json FROM channel_manager_jobs WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>(),
     env.DB.prepare('SELECT id,name,source,created_at,expires_at,target_ids_json FROM channel_manager_snapshots WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>(),
   ]);
   const protectedIds=[guild.rules_channel_id,guild.public_updates_channel_id,guild.system_channel_id,guild.afk_channel_id].filter(Boolean).map(String);
-  return json({owner_only:true,channels,dependencies,protected_ids:protectedIds,system_channels:{rules:guild.rules_channel_id||null,updates:guild.public_updates_channel_id||null,system:guild.system_channel_id||null,afk:guild.afk_channel_id||null},jobs:jobs.results.map(parseJob),action_jobs:await safeActionJobs(env,guildId),snapshots:snapshots.results.map((row:any)=>({...row,target_count:safeArray(row.target_ids_json).length}))});
+  return json({owner_only:true,channels,roles,dependencies,protected_ids:protectedIds,system_channels:{rules:guild.rules_channel_id||null,updates:guild.public_updates_channel_id||null,system:guild.system_channel_id||null,afk:guild.afk_channel_id||null},jobs:jobs.results.map(parseJob),action_jobs:await safeActionJobs(env,guildId),snapshots:snapshots.results.map((row:any)=>({...row,target_count:safeArray(row.target_ids_json).length}))});
 }
 
 async function previewDelete(env:Env,guildId:string,body:any):Promise<Response>{
@@ -121,14 +121,15 @@ async function executeCreate(env:Env,guildId:string,actorId:string,body:any):Pro
 }
 
 async function previewEdit(env:Env,guildId:string,body:any):Promise<Response>{
-  const channels=await getChannels(env,guildId),channelMap=new Map(channels.map(channel=>[channel.id,channel])),raw=Array.isArray(body.items)?body.items.slice(0,100):[],errors:string[]=[],seen=new Set<string>(),items:any[]=[];
+  const [channels,roles]=await Promise.all([getChannels(env,guildId),getRoles(env,guildId)]),channelMap=new Map(channels.map(channel=>[channel.id,channel])),validRoleIds=new Set(roles.map(role=>String(role.id))),raw=Array.isArray(body.items)?body.items.slice(0,100):[],errors:string[]=[],seen=new Set<string>(),items:any[]=[];
+  validRoleIds.add(String(guildId));
   for(const draft of raw){
     const id=String(draft.id||''),current=channelMap.get(id);
     if(!current){errors.push(`Unknown channel or category ${id||'(missing ID)'}.`);continue;}
     if(seen.has(id)){errors.push(`${current.name} appears more than once.`);continue;}seen.add(id);
     const name=String(draft.name??current.name).trim();
     if(!name||name.length>100)errors.push(`${current.name} must have a name from 1–100 characters.`);
-    const item:any={...current,id,name,type:current.type,parent_id:current.type===4?null:(draft.parent_id===undefined?current.parent_id:(draft.parent_id?String(draft.parent_id):null)),topic:current.topic??'',nsfw:draft.nsfw===undefined?Boolean(current.nsfw):Boolean(draft.nsfw),rate_limit_per_user:clamp(draft.rate_limit_per_user,0,21600,current.rate_limit_per_user||0),bitrate:clamp(draft.bitrate,8000,384000,current.bitrate||64000),user_limit:clamp(draft.user_limit,0,99,current.user_limit||0)};
+    const permission_overwrites=normalizePermissionOverwrites(draft.permission_overwrites===undefined?current.permission_overwrites:draft.permission_overwrites,validRoleIds),item:any={...current,id,name,type:current.type,parent_id:current.type===4?null:(draft.parent_id===undefined?current.parent_id:(draft.parent_id?String(draft.parent_id):null)),topic:current.topic??'',nsfw:draft.nsfw===undefined?Boolean(current.nsfw):Boolean(draft.nsfw),rate_limit_per_user:clamp(draft.rate_limit_per_user,0,21600,current.rate_limit_per_user||0),bitrate:clamp(draft.bitrate,8000,384000,current.bitrate||64000),user_limit:clamp(draft.user_limit,0,99,current.user_limit||0),permission_overwrites,permission_overwrites_changed:permissionSignature(current.permission_overwrites)!==permissionSignature(permission_overwrites)};
     if(item.parent_id){const parent=channelMap.get(item.parent_id);if(!parent||parent.type!==4)errors.push(`${name} must use an existing category from this server.`);if(item.parent_id===id)errors.push(`${name} cannot be its own parent category.`)}
     if([0,5,15,16].includes(current.type)){item.topic=String(draft.topic??current.topic??'').slice(0,1024);item.nsfw=Boolean(draft.nsfw);}
     items.push(item);
@@ -137,18 +138,19 @@ async function previewEdit(env:Env,guildId:string,body:any):Promise<Response>{
   for(const channel of channels.filter(channel=>channel.type!==4&&channel.parent_id))finalCounts.set(String(channel.parent_id),channels.filter(candidate=>candidate.type!==4&&candidate.parent_id===channel.parent_id).length);
   for(const item of items){const before=channelMap.get(item.id)!;if(before.parent_id&&before.parent_id!==item.parent_id)finalCounts.set(before.parent_id,Math.max(0,(finalCounts.get(before.parent_id)||0)-1));if(item.parent_id&&before.parent_id!==item.parent_id)finalCounts.set(item.parent_id,(finalCounts.get(item.parent_id)||0)+1)}
   for(const [categoryId,count] of finalCounts)if(count>50)errors.push(`${channelMap.get(categoryId)?.name||'That category'} would exceed Discord’s 50-channel category limit.`);
-  const changes=items.filter(item=>{const before=channelMap.get(item.id)!;return before.name!==item.name||before.parent_id!==item.parent_id||([0,5,15,16].includes(before.type)&&((before.topic||'')!==item.topic||Boolean(before.nsfw)!==Boolean(item.nsfw)||Number(before.rate_limit_per_user||0)!==Number(item.rate_limit_per_user||0)))||([2,13].includes(before.type)&&(Number(before.bitrate||0)!==Number(item.bitrate||0)||Number(before.user_limit||0)!==Number(item.user_limit||0)))});
+  const changes=items.filter(item=>{const before=channelMap.get(item.id)!;return before.name!==item.name||before.parent_id!==item.parent_id||item.permission_overwrites_changed||([0,5,15,16].includes(before.type)&&((before.topic||'')!==item.topic||Boolean(before.nsfw)!==Boolean(item.nsfw)||Number(before.rate_limit_per_user||0)!==Number(item.rate_limit_per_user||0)))||([2,13].includes(before.type)&&(Number(before.bitrate||0)!==Number(item.bitrate||0)||Number(before.user_limit||0)!==Number(item.user_limit||0)))});
   if(!raw.length)errors.push('Select at least one existing category or channel to edit.');
   if(!changes.length&&!errors.length)errors.push('Nothing changed. Adjust a name, category, or channel setting first.');
   if(errors.length)return json({error:'invalid_edit_plan',detail:errors[0],errors,items,changes},400);
   const fingerprint=await digest(JSON.stringify(changes.map(editSignature)));
-  return json({items,changes,fingerprint,confirmation_phrase:`EDIT ${changes.length} CHANNELS`,warning:'Orbit will apply these edits one at a time through Discord and record each result. A structural backup is captured first.'});
+  return json({items,changes,fingerprint,confirmation_phrase:`EDIT ${changes.length} CHANNELS`,warning:'Orbit will apply these edits one at a time through Discord and record each result. Role permission overwrites are included when changed. A structural backup is captured first.'});
 }
 
 async function executeEdit(env:Env,guildId:string,actorId:string,body:any):Promise<Response>{
   if(!env.JOBS)return json({error:'queue_unavailable',detail:'The Orbit job queue is not configured, so channel edits are disabled.'},503);
   if(!await botCanManageChannels(env,guildId))return json({error:'missing_manage_channels',detail:'Orbit needs Manage Channels in Discord before it can edit channels.'},403);
   const previewResponse=await previewEdit(env,guildId,body),preview=await previewResponse.clone().json<any>();if(!previewResponse.ok)return previewResponse;
+  if(preview.changes?.some((item:any)=>item.permission_overwrites_changed)&&!await botCanManageRoles(env,guildId))return json({error:'missing_manage_roles',detail:'Orbit needs Manage Roles in Discord to change category or channel role permissions.'},403);
   if(body.fingerprint!==preview.fingerprint)return json({error:'preview_changed',detail:'The Discord structure changed. Preview the edits again.'},409);
   if(String(body.confirmation||'')!==preview.confirmation_phrase)return json({error:'confirmation_required',detail:`Type ${preview.confirmation_phrase} exactly.`},400);
   if(!body.acknowledged)return json({error:'acknowledgement_required',detail:'Confirm that you reviewed the edits and intend to update Discord.'},400);
@@ -233,12 +235,14 @@ async function snapshot(env:Env,guildId:string,actorId:string,name:string,source
 }
 
 async function getChannels(env:Env,guildId:string):Promise<Channel[]>{const response=await discord(env,`/guilds/${guildId}/channels`);if(!response.ok)throw new Error(`discord_channels_${response.status}`);const raw=await response.json<any[]>();return raw.filter(c=>STRUCTURAL_TYPES.has(Number(c.type))).map(normalizeChannel).sort((a,b)=>a.position-b.position);}
+async function getRoles(env:Env,guildId:string):Promise<any[]>{const response=await discord(env,`/guilds/${guildId}/roles`);if(!response.ok)throw new Error(`discord_roles_${response.status}`);return response.json<any[]>();}
 async function resolveManualDeleteTargets(env:Env,guildId:string,ids:string[],visible:Channel[]):Promise<{targets:Channel[];unresolved:string[]}>{const visibleIds=new Set(visible.map(channel=>channel.id)),needed=ids.filter(id=>!visibleIds.has(id));if(!needed.length)return {targets:[],unresolved:[]};const targets=await loadKnownSnapshotChannels(env,guildId,needed),found=new Set(targets.map(channel=>channel.id));return {targets,unresolved:needed.filter(id=>!found.has(id))};}
 async function loadKnownSnapshotChannels(env:Env,guildId:string,ids:string[]):Promise<Channel[]>{const wanted=new Set(ids.map(String));if(!wanted.size)return [];const rows=await env.DB.prepare('SELECT structure_json FROM channel_manager_snapshots WHERE guild_id=? ORDER BY created_at DESC LIMIT 20').bind(guildId).all<any>(),found=new Map<string,Channel>();for(const row of rows.results){for(const channel of parseStructure(row.structure_json).channels){const normalized=normalizeChannel(channel);if(wanted.has(normalized.id)&&!found.has(normalized.id))found.set(normalized.id,normalized);}}return [...found.values()];}
 function normalizeChannel(c:any):Channel{return {id:String(c.id),name:String(c.name||'Unnamed'),type:Number(c.type),parent_id:c.parent_id?String(c.parent_id):null,position:Number(c.position||0),topic:c.topic??null,nsfw:Boolean(c.nsfw),rate_limit_per_user:Number(c.rate_limit_per_user||0),bitrate:Number(c.bitrate||0),user_limit:Number(c.user_limit||0),permission_overwrites:Array.isArray(c.permission_overwrites)?c.permission_overwrites.map((o:any)=>({id:String(o.id),type:Number(o.type),allow:String(o.allow||'0'),deny:String(o.deny||'0')})):[]};}
 async function getDiscordGuild(env:Env,guildId:string):Promise<any>{const response=await discord(env,`/guilds/${guildId}`);if(!response.ok)throw new Error(`discord_guild_${response.status}`);return response.json<any>();}
 async function activeJob(env:Env,guildId:string):Promise<any>{return env.DB.prepare("SELECT id,status FROM channel_manager_jobs WHERE guild_id=? AND (status='queued' OR (status='running' AND COALESCE(lease_expires_at,0)>?)) ORDER BY created_at ASC LIMIT 1").bind(guildId,Date.now()).first<any>()}
 async function botCanManageChannels(env:Env,guildId:string):Promise<boolean>{const [rolesResponse,memberResponse]=await Promise.all([discord(env,`/guilds/${guildId}/roles`),discord(env,`/guilds/${guildId}/members/${env.DISCORD_CLIENT_ID}`)]);if(!rolesResponse.ok||!memberResponse.ok)return false;const roles=await rolesResponse.json<any[]>(),member=await memberResponse.json<any>();let permissions=0n;for(const role of roles)if(role.id===guildId||member.roles?.includes(role.id))permissions|=BigInt(role.permissions||0);return Boolean((permissions&8n)||(permissions&16n))}
+async function botCanManageRoles(env:Env,guildId:string):Promise<boolean>{const [rolesResponse,memberResponse]=await Promise.all([discord(env,`/guilds/${guildId}/roles`),discord(env,`/guilds/${guildId}/members/${env.DISCORD_CLIENT_ID}`)]);if(!rolesResponse.ok||!memberResponse.ok)return false;const roles=await rolesResponse.json<any[]>(),member=await memberResponse.json<any>();let permissions=0n;for(const role of roles)if(role.id===guildId||member.roles?.includes(role.id))permissions|=BigInt(role.permissions||0);return Boolean((permissions&8n)||(permissions&(1n<<28n)))}
 
 async function scanDependencies(env:Env,guildId:string):Promise<Record<string,any[]>>{
   const out:Record<string,any[]>={};const add=(id:any,module:string,label:string,blocking=true)=>{if(!id)return;(out[String(id)]??=[]).push({module,label,blocking});};
@@ -271,7 +275,9 @@ async function safeActionJobs(env:Env,guildId:string):Promise<any[]>{try{return 
 function kindType(kind:string):number{return kind==='category'?4:kind==='voice'?2:0}
 function parseSnowflakeList(value:any):string[]{const values=Array.isArray(value)?value:String(value||'').split(/[\s,]+/);return [...new Set(values.map(item=>String(item).trim()).filter(item=>/^\d{15,22}$/.test(item)))].slice(0,25)}
 function clamp(value:any,min:number,max:number,fallback:number):number{const parsed=Number(value);return Number.isFinite(parsed)?Math.floor(Math.max(min,Math.min(max,parsed))):fallback}
-function editSignature(item:any):any[]{return [item.id,item.name,item.parent_id||null,item.topic||'',Boolean(item.nsfw),Number(item.rate_limit_per_user||0),Number(item.bitrate||0),Number(item.user_limit||0)]}
+function editSignature(item:any):any[]{return [item.id,item.name,item.parent_id||null,item.topic||'',Boolean(item.nsfw),Number(item.rate_limit_per_user||0),Number(item.bitrate||0),Number(item.user_limit||0),permissionSignature(item.permission_overwrites)]}
+function permissionSignature(overwrites?:any[]):string{return JSON.stringify((Array.isArray(overwrites)?overwrites:[]).map(item=>[String(item.id||''),Number(item.type||0),String(item.allow||'0'),String(item.deny||'0')]).sort((a,b)=>String(a[0]).localeCompare(String(b[0]))||Number(a[1])-Number(b[1])))}
+function normalizePermissionOverwrites(raw:any,validRoleIds:Set<string>):any[]{const result=new Map<string,any>();for(const item of Array.isArray(raw)?raw:[]){const id=String(item?.id||''),type=Number(item?.type??0);if(!/^\d{15,22}$/.test(id)||![0,1].includes(type)||(type===0&&!validRoleIds.has(id)))continue;let allow=0n,deny=0n;try{allow=BigInt(String(item?.allow||'0'));deny=BigInt(String(item?.deny||'0'))}catch{continue}if(allow<0n||deny<0n)continue;deny&=~allow;result.set(`${type}:${id}`,{id,type,allow:allow.toString(),deny:deny.toString()})}return [...result.values()]}
 function canonicalOrder(channels:Channel[]):any[]{const categories=channels.filter(channel=>channel.type===4).sort((a,b)=>a.position-b.position),items:any[]=[];categories.forEach((category,position)=>{items.push({id:category.id,name:category.name,type:category.type,parent_id:null,position});channels.filter(channel=>channel.type!==4&&channel.parent_id===category.id).sort((a,b)=>a.position-b.position).forEach((channel,index)=>items.push({id:channel.id,name:channel.name,type:channel.type,parent_id:category.id,position:index}))});channels.filter(channel=>channel.type!==4&&!channel.parent_id).sort((a,b)=>a.position-b.position).forEach((channel,index)=>items.push({id:channel.id,name:channel.name,type:channel.type,parent_id:null,position:index}));return items}
 function orderSignature(item:any):any[]{return [item.id,item.parent_id||null,Number(item.position||0)]}
 function safeArray(raw:any):any[]{try{const value=typeof raw==='string'?JSON.parse(raw):raw;return Array.isArray(value)?value:[]}catch{return []}}

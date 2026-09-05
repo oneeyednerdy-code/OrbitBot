@@ -112,7 +112,10 @@ test('Channel Manager can preview and queue edits for existing categories and ch
   assert.match(api,/loadKnownSnapshotChannels/);
   assert.match(api,/must use an existing category/);
   assert.match(api,/automatic-edit/);
+  assert.match(api,/permission_overwrites_changed/);
+  assert.match(api,/missing_manage_roles/);
   assert.match(dispatch,/job\.operation==='edit'/);
+  assert.match(dispatch,/permission_overwrites/);
   assert.match(dispatch,/channel_edit_failed/);
   assert.match(dispatch,/Missing Access \(50001\)/);
   assert.match(dispatch,/guild-level Manage Channels/);
@@ -120,6 +123,10 @@ test('Channel Manager can preview and queue edits for existing categories and ch
   assert.match(page,/cmManualChannelIds/);
   assert.match(page,/manual_channel_ids/);
   assert.match(page,/Queue Channel Edits/);
+  assert.match(page,/ROLE_PERMISSION_OPTIONS/);
+  assert.match(page,/cmPermissionRole/);
+  assert.match(page,/cmCategoryToggle/);
+  assert.match(page,/cmHierarchyToggle/);
 });
 
 test('gateway status publishes its intent manifest and heartbeat health',()=>{

@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.82 — Deploy Me First
+# Orbit v0.1.0-alpha.83 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. Deploy the cumulative source and apply pending migrations through `0051_birthday_panel.sql`. Alpha.77 reorganizes navigation, standardizes sorting, and improves the mobile sidebar without changing module data contracts.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. Deploy the cumulative source and apply pending migrations through `0051_birthday_panel.sql`. Alpha.83 adds owner-only Channel Manager role overwrites for categories and channels, collapsible hierarchy controls, and clearer Discord permission validation. No new D1 migration is required for this patch.
 
 ## 1. Prerequisites
 

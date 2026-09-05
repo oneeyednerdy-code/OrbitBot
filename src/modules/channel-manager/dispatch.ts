@@ -57,6 +57,7 @@ async function runEdit(env:Env,job:any,request:any):Promise<any[]>{
   for(const row of rows){
     await startItem(env,job.id,row.id);
     const item=parse(row.payload_json),payload:any={name:String(item.name||row.name).slice(0,100)};
+    if(item.permission_overwrites_changed)payload.permission_overwrites=Array.isArray(item.permission_overwrites)?item.permission_overwrites:[];
     if(Number(item.type)!==4){payload.parent_id=item.parent_id?String(item.parent_id):null;if([0,5,15,16].includes(Number(item.type))){payload.topic=String(item.topic||'').slice(0,1024);payload.nsfw=Boolean(item.nsfw);payload.rate_limit_per_user=Number(item.rate_limit_per_user||0)}if([2,13].includes(Number(item.type))){payload.bitrate=Number(item.bitrate||64000);payload.user_limit=Number(item.user_limit||0)}}
     const response=await discord(env,`/channels/${row.channel_id}`,{method:'PATCH',headers:auditHeader(job.reason),body:JSON.stringify(payload)});
     if(response.ok)await finishItem(env,row.id,'completed',null,null,row.channel_id);else failures.push(await failItem(env,job,row,response,'channel_edit_failed'));
