@@ -108,6 +108,7 @@ public/js/pages/moderation.js
 public/js/pages/onboarding.js
 public/js/pages/operations.js
 public/js/pages/overview.js
+public/js/pages/roadmap.js
 public/js/pages/roles.js
 public/js/pages/safety.js
 public/js/pages/scheduler.js
@@ -178,6 +179,9 @@ RELEASE-NOTES-0.1.0-alpha.74.md
 RELEASE-NOTES-0.1.0-alpha.75.md
 RELEASE-NOTES-0.1.0-alpha.76.md
 RELEASE-NOTES-0.1.0-alpha.77.md
+RELEASE-NOTES-0.1.0-alpha.78.md
+RELEASE-NOTES-0.1.0-alpha.79.md
+RELEASE-NOTES-0.1.0-alpha.80.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -279,6 +283,7 @@ tests/counting.test.mjs
 tests/navigation.test.mjs
 tests/recurrence.test.mjs
 tests/reliability.test.mjs
+tests/roadmap.test.mjs
 tests/security-regressions.test.mjs
 tsconfig.json
 wrangler.jsonc

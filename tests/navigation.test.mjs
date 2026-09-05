@@ -11,6 +11,7 @@ test('navigation is registry-driven and follows the clean Orbit information arch
   assert.match(navigation, /label: 'Creator'/);
   assert.match(navigation, /'social', 'Social Publishing'/);
   assert.match(navigation, /'features', 'Manage Features'/);
+  assert.match(navigation, /'roadmap', 'Roadmap'/);
   assert.match(navigation, /'channel-manager', 'Channel Manager'.*ownerOnly/s);
   assert.match(index, /<nav id="nav" aria-label="Orbit sections"><\/nav>/);
   assert.match(index, /id="sidebarScrim"/);

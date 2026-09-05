@@ -50,6 +50,7 @@ export const NAV_GROUPS = [
     id: 'system',
     label: 'System',
     items: [
+      ['roadmap', 'Roadmap', '⌁', null],
       ['operations', 'Operations Center', '◈', null],
       ['health', 'Community Health', '♡', 'creator_community'],
       ['channel-manager', 'Channel Manager', '▦', null, { ownerOnly: true }],

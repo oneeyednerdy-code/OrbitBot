@@ -31,6 +31,7 @@ import { renderOnboarding } from './pages/onboarding.js';
 import { renderConnections } from './pages/connections.js';
 import { renderBugs } from './pages/bugs.js';
 import { renderChannelManager } from './pages/channel-manager.js';
+import { renderRoadmap } from './pages/roadmap.js';
 
 export { renderLoading, renderError, renderNoServers, renderInstallNeeded, renderGuildAuthorizationError };
 
@@ -39,6 +40,7 @@ export function renderPage(){
   beginPageRender();
   switch(state.page){
     case 'overview': return renderOverview();
+    case 'roadmap': return renderRoadmap();
     case 'verification': return renderVerification();
     case 'moderation': return renderModeration();
     case 'roles': return renderRoles();

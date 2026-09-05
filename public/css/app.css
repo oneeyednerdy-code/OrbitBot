@@ -184,6 +184,20 @@ button:focus-visible,a:focus-visible,select:focus-visible,input:focus-visible,te
 .social-calendar-item{padding:7px;margin-top:5px;border-left:3px solid var(--purple);border-radius:6px;background:rgba(139,92,246,.08);font-size:.78rem;overflow-wrap:anywhere}
 .social-calendar-item span{color:var(--muted)}
 .muted{color:var(--muted)}
+.roadmap-hero{background:linear-gradient(135deg,rgba(139,92,246,.14),var(--surface) 62%)}
+.roadmap-lead{max-width:760px;color:#d9d5e4;line-height:1.6;margin:18px 0 0}
+.roadmap-section-heading{margin:32px 0 14px}
+.roadmap-section-heading h2{margin:4px 0 0}
+.roadmap-card{min-height:190px;display:flex;flex-direction:column}
+.roadmap-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.roadmap-card-head h3{margin:4px 0 0}
+.roadmap-card p{color:var(--muted);line-height:1.55;font-size:14px;margin-bottom:0}
+.roadmap-history{margin-top:32px}
+.roadmap-change-list{display:grid;gap:0;margin-top:10px}
+.roadmap-change{display:grid;grid-template-columns:110px minmax(0,1fr);gap:14px;align-items:start;padding:14px 0;border-top:1px solid var(--line)}
+.roadmap-change strong{display:block;margin:3px 0 4px}
+.roadmap-change p{color:var(--muted);line-height:1.5;margin:0;font-size:13px}
+@media(max-width:560px){.roadmap-card-head{align-items:stretch;flex-direction:column}.roadmap-change{grid-template-columns:1fr;gap:8px}}
 @media(max-width:620px){.question-row{grid-template-columns:30px minmax(0,1fr)}.question-row .questionRemove{grid-column:2}.application-form-row{align-items:stretch;flex-direction:column}}
 .diag-recent-errors{display:grid;gap:8px;margin-top:18px}.diag-error-row{display:grid;gap:5px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#0b0b11}.diag-error-row code{white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:#aaa6b6}
 .verbose-error code{display:block;margin-top:8px;padding:8px;border-radius:8px;background:#08080d;white-space:pre-wrap;overflow-wrap:anywhere;font-size:11px;color:#aaa6b6}
