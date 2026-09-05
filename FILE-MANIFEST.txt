@@ -67,7 +67,8 @@ migrations/0043_tiktok_announcements.sql
 migrations/0044_short_video_posts.sql
 migrations/0045_short_video_uploads.sql
 migrations/0046_owner_stream_alerts.sql
-migrations/0047_application_panels_and_paging.sql
+migrations/0047_social_images_and_role_pings.sql
+migrations/0048_social_composer_v2.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -159,7 +160,9 @@ RELEASE-NOTES-0.1.0-alpha.61.md
 RELEASE-NOTES-0.1.0-alpha.62.md
 RELEASE-NOTES-0.1.0-alpha.63.md
 RELEASE-NOTES-0.1.0-alpha.64.md
-RELEASE-NOTES-0.1.0-alpha.65.md
+RELEASE-NOTES-0.1.0-alpha.66.md
+RELEASE-NOTES-0.1.0-alpha.67.md
+RELEASE-NOTES-0.1.0-alpha.68.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -179,7 +182,6 @@ src/index.ts
 src/modules/access/interactions.ts
 src/modules/access/service.ts
 src/modules/applications/api.ts
-src/modules/applications/interactions.ts
 src/modules/automation/api.ts
 src/modules/automation/engine.ts
 src/modules/automation/policy.js
@@ -231,8 +233,10 @@ src/modules/short-video/media.ts
 src/modules/short-video/providers.ts
 src/modules/social/adapters.ts
 src/modules/social/api.ts
+src/modules/social/constants.ts
 src/modules/social/dispatch.ts
 src/modules/social/limits.ts
+src/modules/social/media.ts
 src/modules/tickets/api.ts
 src/modules/tickets/interactions.ts
 src/modules/tiktok/poll.ts
@@ -249,7 +253,6 @@ src/security/outbound-url.ts
 src/types.ts
 src/version.ts
 START-HERE.md
-tests/application-panels.test.mjs
 tests/community-engagement.test.mjs
 tests/recurrence.test.mjs
 tests/reliability.test.mjs

@@ -14,6 +14,7 @@ import { dispatchEngagementQuestion, engagementSweep } from '../community-engage
 import { updateActionJob } from '../../repositories/action-jobs';
 import { pollTikTokAnnouncements } from '../tiktok/poll';
 import { dispatchShortVideo, shortVideoSweep } from '../short-video/dispatch';
+import { cleanupExpiredSocialMedia } from '../social/media';
 
 const DISPATCH_LEASE_MS=2*60_000;
 
@@ -112,6 +113,7 @@ export async function scheduledSweep(env: Env): Promise<void> {
   await pollOwnerStreamAlerts(env);
   await pollTikTokAnnouncements(env);
   await socialSweep(env);
+  await cleanupExpiredSocialMedia(env);
   await shortVideoSweep(env);
   if (!env.JOBS) return; const now=Date.now();const due = await env.DB.prepare("SELECT id FROM scheduled_posts WHERE paused=0 AND scheduled_for<=? AND (status='queued' OR (status='sending' AND COALESCE(dispatch_lease_until,0)<=?)) ORDER BY scheduled_for ASC LIMIT 100").bind(now,now).all<{ id: number }>();
   for (const row of due.results) await env.JOBS.send({ type: 'scheduled-post-dispatch', scheduledPostId: row.id });

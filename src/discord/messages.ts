@@ -11,3 +11,12 @@ export function safeMessageBody(input:SafeMessage):Record<string,unknown>{
 export function sendDiscordMessage(env:Env,channelId:string,input:SafeMessage):Promise<Response>{
   return discord(env,`/channels/${channelId}/messages`,{method:'POST',body:JSON.stringify(safeMessageBody(input))});
 }
+
+export type MessageAttachment={filename:string;contentType:string;data:ArrayBuffer};
+
+export async function sendDiscordMessageWithAttachments(env:Env,channelId:string,input:SafeMessage,attachments:MessageAttachment[]):Promise<Response>{
+  const form=new FormData();
+  form.append('payload_json',JSON.stringify(safeMessageBody({...input,attachments:attachments.map((file,index)=>({id:index,filename:file.filename}))})));
+  attachments.forEach((file,index)=>form.append(`files[${index}]`,new Blob([file.data],{type:file.contentType}),file.filename));
+  return discord(env,`/channels/${channelId}/messages`,{method:'POST',body:form});
+}

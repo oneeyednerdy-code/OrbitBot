@@ -1,6 +1,6 @@
-# Orbit v0.1.0-alpha.62 — Deploy Me First
+# Orbit v0.1.0-alpha.68 — Deploy Me First
 
-This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. The `migrations/` directory contains the full ordered D1 migration chain through alpha.62. Apply all pending migrations through `0046_owner_stream_alerts.sql` before deploying the Worker. Alpha.62 adds server-owner-only My Stream Twitch authorization and duplicate-safe live alerts while retaining the `orbit-storage` R2 upload binding and guarded editing for existing Discord categories and channels.
+This ZIP is the **single cumulative Orbit deployment**. You do not install older builds separately. No new D1 migration is required for alpha.68; deploy the cumulative source and apply any pending migrations through `0048_social_composer_v2.sql`. Alpha.68 adds owner-only Ko-fi verification-token setup, a copyable system webhook URL, legacy webhook compatibility, and milestone edit/enable/disable/delete management while retaining alpha.67 Social Composer v2 and alpha.66 social image and Discord role-ping work.
 
 ## 1. Prerequisites
 

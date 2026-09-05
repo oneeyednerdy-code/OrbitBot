@@ -239,6 +239,66 @@ test('short-form video and social management stay separate and enforce platform 
   assert.match(uploadMigration,/media_key/);
 });
 
+test('social publishing supports image uploads and Discord role pings',()=>{
+  const socialApi=read('src/modules/social/api.ts');
+  const socialAdapters=read('src/modules/social/adapters.ts');
+  const socialDispatch=read('src/modules/social/dispatch.ts');
+  const socialMedia=read('src/modules/social/media.ts');
+  const socialPage=read('public/js/pages/social.js');
+  const discordMessages=read('src/discord/messages.ts');
+  const discordClient=read('src/discord/client.ts');
+  const router=read('src/router.ts');
+  const api=read('src/http/api.ts');
+  const dashboard=read('src/modules/dashboard/api.ts');
+  const migration=read('migrations/0047_social_images_and_role_pings.sql');
+  assert.match(socialApi,/media_ids/);
+  assert.match(socialApi,/ping_role_id/);
+  assert.match(socialApi,/mentionable/);
+  assert.match(socialAdapters,/com\.atproto\.repo\.uploadBlob/);
+  assert.match(socialAdapters,/media_type', 'IMAGE'/);
+  assert.match(socialAdapters,/api\/v2\/media/);
+  assert.match(socialDispatch,/sendDiscordMessageWithAttachments/);
+  assert.match(socialDispatch,/pingRoleIds/);
+  assert.match(socialMedia,/socialMediaUrl/);
+  assert.match(socialMedia,/bucket\.put/);
+  assert.match(socialPage,/social-upload/);
+  assert.match(socialPage,/soDiscordRole/);
+  assert.match(socialPage,/multiple/);
+  assert.match(discordMessages,/payload_json/);
+  assert.match(discordClient,/instanceof FormData/);
+  assert.match(router,/serveSocialMedia/);
+  assert.match(api,/social-upload/);
+  assert.match(dashboard,/socialImageUploadApi/);
+  assert.match(migration,/social_media/);
+  assert.match(migration,/media_ids_json/);
+  assert.match(migration,/ping_role_id/);
+});
+
+test('social composer v2 supports platform variants, drafts, templates, campaigns, alt text, and a calendar',()=>{
+  const api=read('src/modules/social/api.ts');
+  const dispatch=read('src/modules/social/dispatch.ts');
+  const media=read('src/modules/social/media.ts');
+  const page=read('public/js/pages/social.js');
+  const migration=read('migrations/0048_social_composer_v2.sql');
+  assert.match(api,/content_variants_json/);
+  assert.match(api,/save_draft/);
+  assert.match(api,/save_template/);
+  assert.match(api,/campaign/);
+  assert.match(api,/getPlatformContent/);
+  assert.match(dispatch,/content_variants_json/);
+  assert.match(dispatch,/getPlatformContent/);
+  assert.match(media,/x-orbit-alt-text/);
+  assert.match(media,/alt_text/);
+  assert.match(page,/Customize message for each platform/);
+  assert.match(page,/Save Draft/);
+  assert.match(page,/Save current as template/);
+  assert.match(page,/social-calendar/);
+  assert.match(page,/social-alt-input/);
+  assert.match(migration,/social_templates/);
+  assert.match(migration,/content_variants_json/);
+  assert.match(migration,/alt_text/);
+});
+
 test('server search can load channel counts without replacing the current session',()=>{
   const dashboard=read('src/modules/dashboard/api.ts');
   const api=read('src/http/api.ts');

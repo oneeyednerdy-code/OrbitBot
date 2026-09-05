@@ -1,4 +1,4 @@
-# Orbit Feature Set — alpha.62 cumulative build
+# Orbit Feature Set — alpha.68 cumulative build
 
 ## Core / UI
 - Clean Nerdspace Labs-aligned Orbit dashboard
@@ -49,7 +49,8 @@
 - Queue-backed dispatch
 - Recurring schedules
 - Post templates/history
-- Ko-fi webhook and milestones
+- Ko-fi webhook with owner-only verification-token setup, copyable system webhook URL, one URL per integration, payment totals, and milestone automation
+- Ko-fi milestone creation, editing, enable/disable, and deletion
 - Community Alerts for Twitch, YouTube, podcast RSS, TikTok feeds, and RSS
 - Custom going-live/offline messages
 - Per-alert Discord channel and ping role
@@ -58,7 +59,7 @@
 - Creator Directory
 - Social publishing queue
 - Bluesky, Mastodon and Threads adapters
-- Social Management composer with live Bluesky, Threads, Mastodon, and Discord character counters
+- Social Management composer with platform-specific copy, live character counters, drafts, campaign tags, reusable templates, image alt text, and a 14-day calendar
 - Separate Short-Form Video queue for YouTube Shorts, TikTok Direct Post, and Instagram Reels
 - Short-Form Video file picker with server-side R2 storage plus public-HTTPS URL fallback
 - YouTube, TikTok, and Instagram API login connections with encrypted server-side credentials
@@ -74,6 +75,7 @@
 ## Roadmap still intentionally not claimed as complete
 - YouTube Community publishing
 - TikTok/Instagram provider approval and account-specific capabilities beyond the implemented video publishing flow
+- X/Twitter publishing after the Ko-fi milestone system is established, including OAuth, text/image posts, scheduling, and URL-aware API-cost controls
 - Rich raid-train slot automation/check-in workflow
 - Public anonymous-report intake without Discord authentication
 - Full creator application public portal
@@ -97,5 +99,4 @@ Those remain future work rather than fake "working" buttons.
 - Discord Scheduled Event permission/error diagnostics.
 - Role panel deletion removes the Discord panel message but preserves already assigned member roles.
 - Applications/Appeals form editor with up to 10 add/remove questions and edit-in-place support.
-- Applications/Appeals Discord panels with Post to Channel controls and a two-page modal flow for 6–10 questions.
 - Simplified onboarding with no Discord community-type question.

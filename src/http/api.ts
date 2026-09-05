@@ -9,6 +9,7 @@ import { operatorBugApi } from '../modules/bug-reports/api';
 import { recordSystemError } from '../repositories/errors';
 import { loadGuildResources, validateChannelIds, validateRoleIds } from '../discord/guild-resources';
 import { MAX_SHORT_VIDEO_UPLOAD_BYTES } from '../modules/short-video/constants';
+import { MAX_SOCIAL_IMAGE_UPLOAD_BYTES } from '../modules/social/constants';
 
 function validMutation(request: Request, env: Env, csrf: string): boolean {
   return request.headers.get('origin') === env.APP_ORIGIN && request.headers.get('x-orby-csrf') === csrf;
@@ -19,7 +20,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   const session = await getSession(request, env);
   if (!session) return json({ error: 'unauthorized' }, 401);
   const contentLength=Number(request.headers.get('content-length')||0);
-  const maxBodyBytes=url.pathname.endsWith('/reliability')?1_000_000:url.pathname.endsWith('/short-video-upload')?MAX_SHORT_VIDEO_UPLOAD_BYTES:256_000;
+  const maxBodyBytes=url.pathname.endsWith('/reliability')?1_000_000:url.pathname.endsWith('/short-video-upload')?MAX_SHORT_VIDEO_UPLOAD_BYTES:url.pathname.endsWith('/social-upload')?MAX_SOCIAL_IMAGE_UPLOAD_BYTES:256_000;
   if(request.method!=='GET'&&Number.isFinite(contentLength)&&contentLength>maxBodyBytes)return json({error:'request_too_large',detail:`Orbit API requests are limited to ${Math.round(maxBodyBytes/1024)} KB for this endpoint.`},413);
   if (request.method !== 'GET' && !validMutation(request, env, session.csrf_token)) return json({ error: 'forbidden' }, 403);
 
@@ -29,7 +30,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/guilds') return listManageableGuilds(request, env, session);
   if (url.pathname === '/api/operator/bugs') return operatorBugApi(request, env, session.user_id);
 
-  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
+  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|social-upload|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
   if (!match) return json({ error: 'not_found' }, 404);
   const guildId = match[1];
   const action = match[2] ?? 'config';
@@ -62,12 +63,12 @@ async function validateMutationResources(request:Request,env:Env,guildId:string,
   if(action==='community-engagement'&&body.op==='save')add(channels,body.channel_id);
   if(action==='leveling'){add(channels,body.announce_channel_id);add(roles,body.reward_role_id);}
   if(action==='social'&&(body.op==='connect_discord'||body.op==='connect'))add(channels,body.discord_channel_id);
+  if(action==='social'&&body.op!=='connect_discord'&&body.op!=='connect')add(roles,body.ping_role_id);
   if(action==='security'&&body.op==='save'){add(channels,body.channel_ids,body.alert_channel_id);}
   if(action==='shield'&&body.op==='save'){add(channels,body.channel_ids,body.alert_channel_id);add(roles,body.alert_role_id);}
   if(action==='creator-safety'&&body.op==='save'){add(channels,body.channel_ids,body.alert_channel_id);}
   if(action==='creator'){add(channels,body.discord_channel_id);add(roles,body.required_role_id,body.mention_role_id);}
   if(action==='events'){add(channels,body.discord_channel_id);add(roles,body.ping_role_id);}
-  if(action==='applications'){add(channels,body.channel_id,body.destination_channel_id);add(roles,body.staff_role_id);}
   if(!channels.length&&!roles.length)return null;
   const resources=await loadGuildResources(env,guildId,{channels:channels.length>0,roles:roles.length>0});
   if(!resources.ok)return json(resources,resources.status);

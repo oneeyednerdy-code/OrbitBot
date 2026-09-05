@@ -32,6 +32,7 @@ Orbit is a Nerdspace Labs product with its own control-center identity. The foun
 - Threads
 - Bluesky
 - Mastodon
+- X/Twitter publishing after the Ko-fi milestone system is established
 - RSS
 
 The social architecture is intended to support both Orbit -> platform publishing and platform -> configured Discord channel notifications.
@@ -48,7 +49,8 @@ The social architecture is intended to support both Orbit -> platform publishing
 8. Leveling
 9. Automation engine
 10. Ko-fi milestones
-11. Social adapters and social-to-Discord feeds
+11. X/Twitter publishing adapter with OAuth, text/image posts, scheduling, and URL-aware API-cost controls
+12. Social adapters and social-to-Discord feeds
 
 ## Architecture rule
 

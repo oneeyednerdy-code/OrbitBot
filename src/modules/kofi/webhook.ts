@@ -3,9 +3,11 @@ import { sha256 } from '../../security/crypto';
 import { discord } from '../../discord/client';
 import { audit } from '../../repositories/audit';
 import { sendDiscordMessage } from '../../discord/messages';
-export async function kofiWebhook(request:Request,env:Env,guildId:string,token:string):Promise<Response>{
- const cfg=await env.DB.prepare('SELECT * FROM kofi_integrations WHERE guild_id=? AND enabled=1').bind(guildId).first<any>();if(!cfg||await sha256(token)!==cfg.webhook_token_hash)return new Response('not found',{status:404});
+export async function kofiWebhook(request:Request,env:Env,guildId:string,legacyToken?:string):Promise<Response>{
+ const cfg=await env.DB.prepare('SELECT * FROM kofi_integrations WHERE guild_id=? AND enabled=1').bind(guildId).first<any>();
  let raw:any={};const type=request.headers.get('content-type')||'';try{if(type.includes('application/x-www-form-urlencoded')){const form=await request.formData();raw=JSON.parse(String(form.get('data')||'{}'));}else raw=await request.json();}catch{return new Response('bad payload',{status:400});}
+ const providedToken=legacyToken||String(raw.verification_token||'').trim();
+ if(!cfg||!cfg.webhook_token_hash||!providedToken||await sha256(providedToken)!==cfg.webhook_token_hash)return new Response('not found',{status:404});
  const currency=String(raw.currency||'USD').toUpperCase();const amountMinor=Math.round(Number(raw.amount||0)*100);const tx=String(raw.kofi_transaction_id||raw.transaction_id||'').trim();if(amountMinor<=0)return new Response('ignored',{status:202});if(!tx)return new Response('transaction id required',{status:400});
  try{await env.DB.prepare('INSERT INTO kofi_events(guild_id,transaction_id,event_type,amount_minor,currency,received_at) VALUES(?,?,?,?,?,?)').bind(guildId,tx,String(raw.type||'donation'),amountMinor,currency,Date.now()).run();}catch{return new Response('duplicate',{status:200});}
  await env.DB.prepare(`INSERT INTO kofi_totals(guild_id,currency,amount_minor,updated_at) VALUES(?,?,?,?) ON CONFLICT(guild_id,currency) DO UPDATE SET amount_minor=kofi_totals.amount_minor+excluded.amount_minor,updated_at=excluded.updated_at`).bind(guildId,currency,amountMinor,Date.now()).run();const totalRow=await env.DB.prepare('SELECT amount_minor FROM kofi_totals WHERE guild_id=? AND currency=?').bind(guildId,currency).first<any>();const total=Number(totalRow?.amount_minor||0);

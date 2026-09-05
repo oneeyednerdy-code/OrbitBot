@@ -9,6 +9,7 @@ import { withSecurityHeaders } from './security/headers';
 import { kofiWebhook } from './modules/kofi/webhook';
 import { connectionOauthStart, connectionOauthCallback } from './modules/connections/oauth';
 import { serveShortVideoMedia } from './modules/short-video/media';
+import { serveSocialMedia } from './modules/social/media';
 
 export async function routeRequest(request: Request, env: Env): Promise<Response> {
   const url = new URL(request.url);
@@ -31,7 +32,8 @@ export async function routeRequest(request: Request, env: Env): Promise<Response
   }
   if (url.pathname === '/interactions' && request.method === 'POST') return handleInteractions(request, env);
   if (url.pathname.startsWith('/media/short-video/')) return serveShortVideoMedia(request, env);
-  const kofiMatch=url.pathname.match(/^\/webhooks\/kofi\/(\d+)\/([^/]+)$/);
+  if (url.pathname.startsWith('/media/social/')) return serveSocialMedia(request, env);
+  const kofiMatch=url.pathname.match(/^\/webhooks\/kofi\/(\d+)(?:\/([^/]+))?$/);
   if(kofiMatch&&request.method==='POST') return kofiWebhook(request,env,kofiMatch[1],kofiMatch[2]);
   if (url.pathname.startsWith('/api/')) return handleApi(request, env);
   const verificationMatch = url.pathname.match(/^\/verify\/(.+)$/);

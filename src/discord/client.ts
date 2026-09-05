@@ -28,7 +28,7 @@ export async function discord(env: Env, path: string, init: RequestInit = {}, us
   const safeInit = withSafeMessageMentions(path, method, init);
   const headers = new Headers(safeInit.headers);
   headers.set('authorization', userToken ? `Bearer ${userToken}` : `Bot ${env.DISCORD_BOT_TOKEN}`);
-  if (safeInit.body) headers.set('content-type', 'application/json');
+  if (safeInit.body && !headers.has('content-type') && !(typeof FormData !== 'undefined' && safeInit.body instanceof FormData)) headers.set('content-type', 'application/json');
   const key = routeKey(path, method);
   const blockedUntil = Math.max(globalBlockedUntil, routeBlockedUntil.get(key) || 0);
   const wait = blockedUntil - Date.now();

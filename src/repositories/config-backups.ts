@@ -9,7 +9,7 @@ export const CONFIG_BACKUP_TABLES = [
   'guild_config', 'guild_modules', 'guild_features', 'guild_onboarding',
   'honeypot_configs', 'honeypot_exempt_roles', 'honeypot_exempt_users',
   'community_configs', 'custom_commands', 'sticky_configs',
-  'leveling_configs', 'level_rewards', 'automations', 'post_templates',
+  'leveling_configs', 'level_rewards', 'automations', 'post_templates', 'social_templates',
   'ticket_categories', 'application_forms',
   'creator_sources', 'creator_role_alert_configs', 'creator_directory',
   'creator_safety_configs', 'security_configs', 'shield_configs',
@@ -95,7 +95,6 @@ function sanitizeRow(table: string, row: Record<string, unknown>): Record<string
   if (table === 'community_engagement_banks') { delete copy.source_path; }
   if (table === 'community_engagement_configs') { delete copy.dispatch_lease_until; delete copy.dispatch_attempts; delete copy.last_error; }
   if (table === 'ticket_categories') delete copy.panel_message_id;
-  if (table === 'application_forms') { delete copy.panel_message_id; delete copy.panel_posted_at; }
   if (['security_configs', 'shield_configs', 'creator_safety_configs'].includes(table)) {
     delete copy.active; delete copy.operation_status; delete copy.operation_errors_json; delete copy.activated_at; delete copy.activated_reason;
   }
