@@ -182,6 +182,7 @@ RELEASE-NOTES-0.1.0-alpha.77.md
 RELEASE-NOTES-0.1.0-alpha.78.md
 RELEASE-NOTES-0.1.0-alpha.79.md
 RELEASE-NOTES-0.1.0-alpha.80.md
+RELEASE-NOTES-0.1.0-alpha.81.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md

@@ -111,6 +111,8 @@ test('Channel Manager can preview and queue edits for existing categories and ch
   assert.match(api,/automatic-edit/);
   assert.match(dispatch,/job\.operation==='edit'/);
   assert.match(dispatch,/channel_edit_failed/);
+  assert.match(dispatch,/Missing Access \(50001\)/);
+  assert.match(dispatch,/View Channel and Manage Channels/);
   assert.match(page,/cmEditTarget/);
   assert.match(page,/Queue Channel Edits/);
 });
