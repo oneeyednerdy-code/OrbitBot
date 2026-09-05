@@ -32,6 +32,8 @@ import { onboardingApi } from '../onboarding/api';
 import { connectionsApi } from '../connections/api';
 import { bugReportsApi } from '../bug-reports/api';
 import { channelManagerApi } from '../channel-manager/api';
+import { countingApi } from '../counting/api';
+import { birthdaysApi } from '../birthdays/api';
 import { shortVideoApi } from '../short-video/api';
 import { shortVideoUploadApi } from '../short-video/media';
 import { socialImageUploadApi } from '../social/media';
@@ -93,6 +95,8 @@ export async function handleGuildApi(request: Request, env: Env, guildId: string
   if (action === 'shield') return shieldApi(request, env, guildId, session.user_id);
   if (action === 'creator-directory') return creatorDirectoryApi(request, env, guildId);
   if (action === 'events') return eventsApi(request, env, guildId, session.user_id);
+  if (action === 'counting') return countingApi(request, env, guildId, session.user_id);
+  if (action === 'birthdays') return birthdaysApi(request, env, guildId, session.user_id);
   if (action === 'applications') return applicationsApi(request, env, guildId);
   if (action === 'health') return communityHealthApi(request, env, guildId);
   if (action === 'creator-safety') return creatorSafetyApi(request, env, guildId, session.user_id);

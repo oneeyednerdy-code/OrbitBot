@@ -12,6 +12,8 @@ export const moduleCatalog = [
   { id: 'diagnostics', label: 'Diagnostics', status: 'active', description: 'Configuration, permission and infrastructure health checks.' },
   { id: 'community', label: 'Community', status: 'active', description: 'Welcome/goodbye, auto-role, custom commands, polls, reminders and sticky messages.' },
   { id: 'community-engagement', label: 'Community Engagement', status: 'active', description: 'Recurring question prompts with uploadable question banks and duplicate prevention.' },
+  { id: 'counting', label: 'Counting', status: 'active', description: 'A configurable Discord counting game with channel rules, alternating counters, reactions and reset controls.' },
+  { id: 'birthdays', label: 'Birthdays', status: 'active', description: 'Private month/day registration with annual Discord birthday announcements and duplicate protection.' },
   { id: 'security', label: 'Security Center', status: 'active', description: 'Permission risk scanning and reversible selected-channel incident lockdown.' },
   { id: 'channel-manager', label: 'Owner Channel Manager', status: 'active', description: 'Owner-only bulk channel creation, dependency-aware deletion, structural backups and restore.' },
 ] as const;

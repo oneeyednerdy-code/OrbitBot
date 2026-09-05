@@ -8,7 +8,7 @@ document.querySelectorAll('[data-orbit-version]').forEach(element=>{element.text
 const pageFeatures={
   moderation:'protection',shield:'protection',verification:'protection',security:'protection',safety:'protection',logs:'protection',
   creator:'alerts',tickets:'tickets',roles:'roles',scheduler:'scheduler',leveling:'leveling',kofi:'kofi',automation:'automation',social:'social','short-video':'social',
-  directory:'creator_community',events:'creator_community',community:'creator_community','community-engagement':'creator_community',applications:'creator_community',health:'creator_community',operations:'creator_community'
+  directory:'creator_community',events:'creator_community',community:'creator_community','community-engagement':'creator_community',counting:'creator_community',birthdays:'creator_community',applications:'creator_community',health:'creator_community',operations:'creator_community'
 };
 
 async function boot(){

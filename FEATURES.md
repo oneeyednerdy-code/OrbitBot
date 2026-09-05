@@ -102,3 +102,11 @@ Those remain future work rather than fake "working" buttons.
 - Role panel deletion removes the Discord panel message but preserves already assigned member roles.
 - Applications/Appeals form editor with up to 10 add/remove questions and edit-in-place support.
 - Simplified onboarding with no Discord community-type question.
+# Counting
+
+- One configurable Discord counting channel per server.
+- Optional alternating-user enforcement, numbers-only parsing, wrong-number reset, invalid-message deletion, reactions, custom messages, activity history, and dashboard start/stop/reset controls.
+
+# Birthdays
+
+- Private month/day registration, removal, opt-out, configurable announcement channel/message/timezone, optional role ping, and once-per-year duplicate-safe posting.

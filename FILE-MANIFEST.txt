@@ -69,6 +69,8 @@ migrations/0045_short_video_uploads.sql
 migrations/0046_owner_stream_alerts.sql
 migrations/0047_social_images_and_role_pings.sql
 migrations/0048_social_composer_v2.sql
+migrations/0049_counting.sql
+migrations/0050_birthdays.sql
 package-lock.json
 package.json
 PATCH_NOTES_0.1.0-alpha.35.md
@@ -84,12 +86,14 @@ public/js/gateway-recovery.js
 public/js/pages.js
 public/js/pages/applications.js
 public/js/pages/automation.js
+public/js/pages/birthdays.js
 public/js/pages/bugs.js
 public/js/pages/channel-manager.js
 public/js/pages/common.js
 public/js/pages/community-engagement.js
 public/js/pages/community.js
 public/js/pages/connections.js
+public/js/pages/counting.js
 public/js/pages/creator.js
 public/js/pages/diagnostics.js
 public/js/pages/directory.js
@@ -165,6 +169,8 @@ RELEASE-NOTES-0.1.0-alpha.67.md
 RELEASE-NOTES-0.1.0-alpha.68.md
 RELEASE-NOTES-0.1.0-alpha.69.md
 RELEASE-NOTES-0.1.0-alpha.70.md
+RELEASE-NOTES-0.1.0-alpha.71.md
+RELEASE-NOTES-0.1.0-alpha.72.md
 scripts/check-browser.mjs
 scripts/refresh-release-metadata.mjs
 SECURITY.md
@@ -187,6 +193,8 @@ src/modules/applications/api.ts
 src/modules/automation/api.ts
 src/modules/automation/engine.ts
 src/modules/automation/policy.js
+src/modules/birthdays/api.ts
+src/modules/birthdays/service.ts
 src/modules/bug-reports/api.ts
 src/modules/channel-manager/api.ts
 src/modules/channel-manager/dispatch.ts
@@ -198,6 +206,8 @@ src/modules/community/api.ts
 src/modules/community/service.ts
 src/modules/connections/api.ts
 src/modules/connections/oauth.ts
+src/modules/counting/api.ts
+src/modules/counting/service.ts
 src/modules/creator-directory/api.ts
 src/modules/creator-safety/api.ts
 src/modules/creator/api.ts
@@ -256,6 +266,7 @@ src/types.ts
 src/version.ts
 START-HERE.md
 tests/community-engagement.test.mjs
+tests/counting.test.mjs
 tests/recurrence.test.mjs
 tests/reliability.test.mjs
 tests/security-regressions.test.mjs

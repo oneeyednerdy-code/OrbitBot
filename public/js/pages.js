@@ -12,6 +12,8 @@ import { renderLeveling } from './pages/leveling.js';
 import { renderAutomation } from './pages/automation.js';
 import { renderCommunity } from './pages/community.js';
 import { renderCommunityEngagement } from './pages/community-engagement.js';
+import { renderCounting } from './pages/counting.js';
+import { renderBirthdays } from './pages/birthdays.js';
 import { renderKofi } from './pages/kofi.js';
 import { renderCreator } from './pages/creator.js';
 import { renderSocial } from './pages/social.js';
@@ -46,6 +48,8 @@ export function renderPage(){
     case 'automation': return renderAutomation();
     case 'community': return renderCommunity();
     case 'community-engagement': return renderCommunityEngagement();
+    case 'counting': return renderCounting();
+    case 'birthdays': return renderBirthdays();
     case 'kofi': return renderKofi();
     case 'creator': return renderCreator();
     case 'social': return renderSocial();

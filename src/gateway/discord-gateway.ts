@@ -9,6 +9,7 @@ import { runAutomations } from '../modules/automation/engine';
 import { shouldHandleAutomationMessage } from '../modules/automation/policy.js';
 import { handleCommunityMessage, handleMemberAdd, handleMemberRemove } from '../modules/community/service';
 import { shieldMemberJoin, shieldMessage } from '../modules/shield/service';
+import { handleCountingMessage } from '../modules/counting/service';
 
 const GATEWAY_IMPLEMENTATION = 'alpha56-supervised-gateway-v3';
 const GATEWAY_INTENTS = 33283;
@@ -400,6 +401,7 @@ export class DiscordGateway extends DurableObject<Env> {
         await shieldMessage(this.env, packet.d);
         await recordMessageAndCheckHoneypot(this.env, packet.d);
         await awardMessageXp(this.env, packet.d);
+        await handleCountingMessage(this.env, packet.d);
         await handleCommunityMessage(this.env, packet.d);
         if (shouldHandleAutomationMessage(packet.d)) {
           await runAutomations(this.env, packet.d.guild_id, 'message_create', {

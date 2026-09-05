@@ -30,7 +30,7 @@ export async function handleApi(request: Request, env: Env): Promise<Response> {
   if (url.pathname === '/api/guilds') return listManageableGuilds(request, env, session);
   if (url.pathname === '/api/operator/bugs') return operatorBugApi(request, env, session.user_id);
 
-  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|kofi|creator|social|social-upload|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
+  const match = url.pathname.match(/^\/api\/guilds\/(\d+)(?:\/(bootstrap|config|post-rules|create-verification|post-verification|overview|diagnostics|logs|moderation|roles|tickets|scheduler|leveling|automation|community|community-engagement|counting|birthdays|kofi|creator|social|social-upload|short-video|short-video-upload|security|shield|creator-directory|events|applications|health|creator-safety|operations|reliability|onboarding|connections|bug-reports|channel-manager|start-gateway))?$/);
   if (!match) return json({ error: 'not_found' }, 404);
   const guildId = match[1];
   const action = match[2] ?? 'config';
@@ -69,6 +69,8 @@ async function validateMutationResources(request:Request,env:Env,guildId:string,
   if(action==='creator-safety'&&body.op==='save'){add(channels,body.channel_ids,body.alert_channel_id);}
   if(action==='creator'){add(channels,body.discord_channel_id);add(roles,body.required_role_id,body.mention_role_id);}
   if(action==='events'){add(channels,body.discord_channel_id);add(roles,body.ping_role_id);}
+  if(action==='counting'&&(!body.op||body.op==='save'))add(channels,body.channel_id);
+  if(action==='birthdays'&&body.op==='save_config'){add(channels,body.channel_id);add(roles,body.ping_role_id);}
   if(!channels.length&&!roles.length)return null;
   const resources=await loadGuildResources(env,guildId,{channels:channels.length>0,roles:roles.length>0});
   if(!resources.ok)return json(resources,resources.status);

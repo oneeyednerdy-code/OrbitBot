@@ -44,6 +44,8 @@
 - **alpha.60** — Direct short-form video file uploads through R2, public media serving for provider retrieval, and guarded editing of existing Discord categories and channels
 - **alpha.61** — Bound direct video uploads to the `orbit-storage` R2 bucket through the Wrangler-generated `orbit_storage` binding, while retaining compatibility with older `STORAGE` deployments
 - **alpha.62** — Added server-owner-only My Stream Twitch OAuth, selected Discord destination and role ping controls, editable live messages, reconnect/delete actions, encrypted owner account linkage, and duplicate-safe stream-ID polling
+- **alpha.71** — Added the configurable Discord Counting module with Gateway validation, alternating-user and reset rules, reactions, activity history, and dashboard controls
+- **alpha.72** — Added private month/day birthday registration, annual timezone-aware announcements, optional role pings, opt-out controls, and duplicate protection
 # Orbit patch history
 
 ## 0.1.0-alpha.37 — Discord Reliability Baseline
